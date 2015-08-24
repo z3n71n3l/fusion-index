@@ -16,6 +16,7 @@ setup(
         'txspinneret >= 0.1.2',
         'Axiom >= 0.7.4',
         'eliot >= 0.8.0',
+        'testtools',
         ],
     license='MIT',
     packages=find_packages() + ['axiom.plugins'],
