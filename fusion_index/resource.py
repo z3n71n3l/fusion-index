@@ -69,7 +69,7 @@ class LookupResource(object):
 
     def render_GET(self, request):
         request.setHeader('Content-Type', 'application/octet-stream')
-        return 'data'
+        return 'foo'
 
 
     def render_PUT(self, request):
