@@ -1,12 +1,16 @@
 from collections import namedtuple
+from StringIO import StringIO
 
 from testtools import TestCase
-
-from fusion_index.resource import authenticateRequest
 from twisted.internet.interfaces import ISSLTransport
 from twisted.internet.ssl import CertificateOptions, PrivateCertificate
 from twisted.python.filepath import FilePath
+from twisted.trial.unittest import SynchronousTestCase
+from twisted.web.client import FileBodyProducer, readBody
 from zope.interface import implementer
+
+from fusion_index.resource import authenticateRequest, IndexRouter
+from fusion_index.test.util import ResourceTraversalAgent
 
 
 
@@ -68,3 +72,33 @@ class authenticateRequestTests(TestCase):
         request = self.createRequest(options)
         self.assertEqual(
             False, authenticateRequest(request, u'not_localhost'))
+
+
+
+class LookupAPITests(SynchronousTestCase):
+    """
+    Tests for the Lookup HTTP API.
+    """
+    def _resource(self):
+        return IndexRouter()
+
+
+    def test_storeAndRetrieve(self):
+        """
+        Storing a value in the lookup index and then retrieving it results in
+        the same value that was originally stored.
+        """
+        agent = ResourceTraversalAgent(self._resource())
+        response = self.successResultOf(
+            agent.request(
+                b'PUT',
+                b'/lookup/someenv/sometype/somekey',
+                bodyProducer=FileBodyProducer(StringIO(b'data'))))
+        self.assertEqual(response.code, 204)
+
+        response = self.successResultOf(
+            agent.request(b'GET', b'/lookup/someenv/sometype/somekey'))
+        self.assertEqual(response.code, 200)
+        self.assertEqual(
+            self.successResultOf(readBody(response)),
+            b'data')

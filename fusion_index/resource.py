@@ -2,6 +2,9 @@ from service_identity import CertificateError, VerificationError
 from service_identity._common import DNS_ID, verify_service_identity
 from service_identity.pyopenssl import extract_ids
 from twisted.internet.interfaces import ISSLTransport
+from txspinneret.interfaces import ISpinneretResource
+from txspinneret.route import Any, Router, routedResource
+from zope.interface import implementer
 
 
 
@@ -16,7 +19,6 @@ def _verify_hostname(certificate, hostname):
         obligatory_ids=[DNS_ID(hostname)],
         optional_ids=[],
     )
-
 
 
 # XXX: Stolen from Diamond, except this version uses service_identity so it is
@@ -45,3 +47,31 @@ def authenticateRequest(request, hostname):
         else:
             return True
     return False
+
+
+
+@routedResource
+class IndexRouter(object):
+    router = Router()
+
+    @router.route('lookup', Any('environment'), Any('type'), Any('key'))
+    def lookup(self, request, params):
+        print params
+        return LookupResource(params)
+
+
+
+@implementer(ISpinneretResource)
+class LookupResource(object):
+    def __init__(self, params):
+        self.params = params
+
+
+    def render_GET(self, request):
+        request.setHeader('Content-Type', 'application/octet-stream')
+        return 'data'
+
+
+    def render_PUT(self, request):
+        request.setResponseCode(204)
+        return ''
