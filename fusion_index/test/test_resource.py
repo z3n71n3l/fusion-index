@@ -10,7 +10,7 @@ from twisted.trial.unittest import SynchronousTestCase
 from twisted.web.client import FileBodyProducer, readBody
 from zope.interface import implementer
 
-from fusion_index.resource import authenticateRequest, IndexRouter
+from fusion_index.resource import IndexRouter, authenticateRequest
 from fusion_index.test.util import ResourceTraversalAgent
 
 
@@ -43,7 +43,7 @@ class authenticateRequestTests(TestCase):
     def test_authenticateSucceed(self):
         """
         L{authenticateRequest} returns C{True} if the provided client
-        certificate has a matching Common Name.
+        certificate has a matching hostname.
         """
         privateCert = PrivateCertificate.loadPEM(
             FilePath(__file__).sibling(b'data').child(b'test.cert').getContent())
@@ -60,7 +60,7 @@ class authenticateRequestTests(TestCase):
     def test_authenticateFailed(self):
         """
         L{authenticateRequest} returns C{False} if the provided client
-        certificate doesn't have a matching Common Name.
+        certificate doesn't have a matching hostname.
         """
         privateCert = PrivateCertificate.loadPEM(
             FilePath(__file__).sibling(b'data').child(b'test.cert').getContent())
@@ -103,3 +103,82 @@ class LookupAPITests(SynchronousTestCase):
         self.assertEqual(
             self.successResultOf(readBody(response)),
             b'data')
+
+
+    def test_retrieveMissing(self):
+        """
+        Trying to retrieve an item that is not present in the lookup index
+        results in a 404 response.
+        """
+        agent = ResourceTraversalAgent(self._resource())
+        response = self.successResultOf(
+            agent.request(b'GET', b'/lookup/someenv/sometype/somekey'))
+        self.assertEqual(response.code, 404)
+
+
+    def test_storeTwice(self):
+        """
+        Storing a value in the lookup index is idempotent.
+        """
+        agent = ResourceTraversalAgent(self._resource())
+        response = self.successResultOf(
+            agent.request(
+                b'PUT',
+                b'/lookup/someenv/sometype/somekey',
+                bodyProducer=FileBodyProducer(StringIO(b'data'))))
+        self.assertEqual(response.code, 204)
+
+        response = self.successResultOf(
+            agent.request(b'GET', b'/lookup/someenv/sometype/somekey'))
+        self.assertEqual(response.code, 200)
+        self.assertEqual(
+            self.successResultOf(readBody(response)),
+            b'data')
+
+        response = self.successResultOf(
+            agent.request(
+                b'PUT',
+                b'/lookup/someenv/sometype/somekey',
+                bodyProducer=FileBodyProducer(StringIO(b'data'))))
+        self.assertEqual(response.code, 204)
+
+        response = self.successResultOf(
+            agent.request(b'GET', b'/lookup/someenv/sometype/somekey'))
+        self.assertEqual(response.code, 200)
+        self.assertEqual(
+            self.successResultOf(readBody(response)),
+            b'data')
+
+
+    def test_storeOverwrite(self):
+        """
+        Storing a value in the lookup index overwrites any existing value.
+        """
+        agent = ResourceTraversalAgent(self._resource())
+        response = self.successResultOf(
+            agent.request(
+                b'PUT',
+                b'/lookup/someenv/sometype/somekey',
+                bodyProducer=FileBodyProducer(StringIO(b'data'))))
+        self.assertEqual(response.code, 204)
+
+        response = self.successResultOf(
+            agent.request(b'GET', b'/lookup/someenv/sometype/somekey'))
+        self.assertEqual(response.code, 200)
+        self.assertEqual(
+            self.successResultOf(readBody(response)),
+            b'data')
+
+        response = self.successResultOf(
+            agent.request(
+                b'PUT',
+                b'/lookup/someenv/sometype/somekey',
+                bodyProducer=FileBodyProducer(StringIO(b'newdata'))))
+        self.assertEqual(response.code, 204)
+
+        response = self.successResultOf(
+            agent.request(b'GET', b'/lookup/someenv/sometype/somekey'))
+        self.assertEqual(response.code, 200)
+        self.assertEqual(
+            self.successResultOf(readBody(response)),
+            b'newdata')
