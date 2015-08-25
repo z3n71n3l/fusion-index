@@ -1,6 +1,7 @@
 from collections import namedtuple
 from StringIO import StringIO
 
+from axiom.store import Store
 from testtools import TestCase
 from twisted.internet.interfaces import ISSLTransport
 from twisted.internet.ssl import CertificateOptions, PrivateCertificate
@@ -80,7 +81,7 @@ class LookupAPITests(SynchronousTestCase):
     Tests for the Lookup HTTP API.
     """
     def _resource(self):
-        return IndexRouter()
+        return IndexRouter(store=Store())
 
 
     def test_storeAndRetrieve(self):

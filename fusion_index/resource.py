@@ -1,10 +1,14 @@
+from characteristic import attributes
 from service_identity import CertificateError, VerificationError
 from service_identity._common import DNS_ID, verify_service_identity
 from service_identity.pyopenssl import extract_ids
 from twisted.internet.interfaces import ISSLTransport
 from txspinneret.interfaces import ISpinneretResource
+from txspinneret.resource import NotFound
 from txspinneret.route import Any, Router, routedResource
 from zope.interface import implementer
+
+from fusion_index.lookup import LookupEntry
 
 
 
@@ -51,27 +55,41 @@ def authenticateRequest(request, hostname):
 
 
 @routedResource
+@attributes(['store'])
 class IndexRouter(object):
     router = Router()
 
-    @router.route('lookup', Any('environment'), Any('type'), Any('key'))
+    @router.route('lookup', Any('environment'), Any('indexType'), Any('key'))
     def lookup(self, request, params):
-        print params
-        return LookupResource(params)
+        return LookupResource(store=self.store, **params)
 
 
 
 @implementer(ISpinneretResource)
+@attributes(['store', 'environment', 'indexType', 'key'])
 class LookupResource(object):
-    def __init__(self, params):
-        self.params = params
-
-
     def render_GET(self, request):
-        request.setHeader('Content-Type', 'application/octet-stream')
-        return 'foo'
+        try:
+            result = self.store.transact(
+                LookupEntry.get,
+                store=self.store,
+                environment=self.environment,
+                indexType=self.indexType,
+                key=self.key)
+        except KeyError:
+            return NotFound()
+        else:
+            request.setHeader(b'Content-Type', b'application/octet-stream')
+            return result
 
 
     def render_PUT(self, request):
+        self.store.transact(
+            LookupEntry.set,
+            store=self.store,
+            environment=self.environment,
+            indexType=self.indexType,
+            key=self.key,
+            value=request.content.read())
         request.setResponseCode(204)
         return ''
