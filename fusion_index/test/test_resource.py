@@ -84,25 +84,42 @@ class LookupAPITests(SynchronousTestCase):
         return IndexRouter(store=Store())
 
 
+    def get(self, agent, path):
+        """
+        Simulate a GET request.
+        """
+        return self.successResultOf(agent.request(b'GET', path))
+
+
+    def put(self, agent, path, data):
+        """
+        Simulate a PUT request.
+        """
+        return self.successResultOf(
+            agent.request(
+                b'PUT', path, bodyProducer=FileBodyProducer(StringIO(data))))
+
+
+    def data(self, response):
+        """
+        Get the body from a response.
+        """
+        return self.successResultOf(readBody(response))
+
+
     def test_storeAndRetrieve(self):
         """
         Storing a value in the lookup index and then retrieving it results in
         the same value that was originally stored.
         """
         agent = ResourceTraversalAgent(self._resource())
-        response = self.successResultOf(
-            agent.request(
-                b'PUT',
-                b'/lookup/someenv/sometype/somekey',
-                bodyProducer=FileBodyProducer(StringIO(b'data'))))
+        response = self.put(
+            agent, b'/lookup/someenv/sometype/somekey', b'data')
         self.assertEqual(response.code, 204)
 
-        response = self.successResultOf(
-            agent.request(b'GET', b'/lookup/someenv/sometype/somekey'))
+        response = self.get(agent, b'/lookup/someenv/sometype/somekey')
         self.assertEqual(response.code, 200)
-        self.assertEqual(
-            self.successResultOf(readBody(response)),
-            b'data')
+        self.assertEqual(self.data(response), b'data')
 
 
     def test_retrieveMissing(self):
@@ -111,8 +128,7 @@ class LookupAPITests(SynchronousTestCase):
         results in a 404 response.
         """
         agent = ResourceTraversalAgent(self._resource())
-        response = self.successResultOf(
-            agent.request(b'GET', b'/lookup/someenv/sometype/somekey'))
+        response = self.get(agent, b'/lookup/someenv/sometype/somekey')
         self.assertEqual(response.code, 404)
 
 
@@ -121,33 +137,21 @@ class LookupAPITests(SynchronousTestCase):
         Storing a value in the lookup index is idempotent.
         """
         agent = ResourceTraversalAgent(self._resource())
-        response = self.successResultOf(
-            agent.request(
-                b'PUT',
-                b'/lookup/someenv/sometype/somekey',
-                bodyProducer=FileBodyProducer(StringIO(b'data'))))
+        response = self.put(
+            agent, b'/lookup/someenv/sometype/somekey', b'data')
         self.assertEqual(response.code, 204)
 
-        response = self.successResultOf(
-            agent.request(b'GET', b'/lookup/someenv/sometype/somekey'))
+        response = self.get(agent, b'/lookup/someenv/sometype/somekey')
         self.assertEqual(response.code, 200)
-        self.assertEqual(
-            self.successResultOf(readBody(response)),
-            b'data')
+        self.assertEqual(self.data(response), b'data')
 
-        response = self.successResultOf(
-            agent.request(
-                b'PUT',
-                b'/lookup/someenv/sometype/somekey',
-                bodyProducer=FileBodyProducer(StringIO(b'data'))))
+        response = self.put(
+            agent, b'/lookup/someenv/sometype/somekey', b'data')
         self.assertEqual(response.code, 204)
 
-        response = self.successResultOf(
-            agent.request(b'GET', b'/lookup/someenv/sometype/somekey'))
+        response = self.get(agent, b'/lookup/someenv/sometype/somekey')
         self.assertEqual(response.code, 200)
-        self.assertEqual(
-            self.successResultOf(readBody(response)),
-            b'data')
+        self.assertEqual(self.data(response), b'data')
 
 
     def test_storeOverwrite(self):
@@ -155,30 +159,42 @@ class LookupAPITests(SynchronousTestCase):
         Storing a value in the lookup index overwrites any existing value.
         """
         agent = ResourceTraversalAgent(self._resource())
-        response = self.successResultOf(
-            agent.request(
-                b'PUT',
-                b'/lookup/someenv/sometype/somekey',
-                bodyProducer=FileBodyProducer(StringIO(b'data'))))
+        response = self.put(
+            agent, b'/lookup/someenv/sometype/somekey', b'data')
         self.assertEqual(response.code, 204)
 
-        response = self.successResultOf(
-            agent.request(b'GET', b'/lookup/someenv/sometype/somekey'))
+        response = self.get(agent, b'/lookup/someenv/sometype/somekey')
         self.assertEqual(response.code, 200)
-        self.assertEqual(
-            self.successResultOf(readBody(response)),
-            b'data')
+        self.assertEqual(self.data(response), b'data')
 
-        response = self.successResultOf(
-            agent.request(
-                b'PUT',
-                b'/lookup/someenv/sometype/somekey',
-                bodyProducer=FileBodyProducer(StringIO(b'newdata'))))
+        response = self.put(
+            agent, b'/lookup/someenv/sometype/somekey', b'newdata')
         self.assertEqual(response.code, 204)
 
-        response = self.successResultOf(
-            agent.request(b'GET', b'/lookup/someenv/sometype/somekey'))
+        response = self.get(agent, b'/lookup/someenv/sometype/somekey')
         self.assertEqual(response.code, 200)
-        self.assertEqual(
-            self.successResultOf(readBody(response)),
-            b'newdata')
+        self.assertEqual(self.data(response), b'newdata')
+
+
+    def test_storeMultiple(self):
+        """
+        Storing values under one key does not affect different keys.
+        """
+        agent = ResourceTraversalAgent(self._resource())
+
+        response = self.put(agent, b'/lookup/e1/t1/k1', b'data1')
+        self.assertEqual(response.code, 204)
+        response = self.put(agent, b'/lookup/e2/t2/k2', b'data2')
+        self.assertEqual(response.code, 204)
+
+        response = self.get(agent, b'/lookup/e1/t1/k1')
+        self.assertEqual(response.code, 200)
+        self.assertEqual(self.data(response), b'data1')
+
+        response = self.get(agent, b'/lookup/e2/t2/k2')
+        self.assertEqual(response.code, 200)
+        self.assertEqual(self.data(response), b'data2')
+
+        self.assertEqual(self.get(agent, b'/lookup/e2/t1/k1').code, 404)
+        self.assertEqual(self.get(agent, b'/lookup/e1/t2/k1').code, 404)
+        self.assertEqual(self.get(agent, b'/lookup/e1/t1/k2').code, 404)
