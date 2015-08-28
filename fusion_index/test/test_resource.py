@@ -7,6 +7,7 @@ from twisted.internet.interfaces import ISSLTransport
 from twisted.internet.ssl import CertificateOptions, PrivateCertificate
 from twisted.python.filepath import FilePath
 from twisted.trial.unittest import SynchronousTestCase
+from twisted.web import http
 from twisted.web.client import FileBodyProducer, readBody
 from zope.interface import implementer
 
@@ -115,10 +116,10 @@ class LookupAPITests(SynchronousTestCase):
         agent = ResourceTraversalAgent(self._resource())
         response = self.put(
             agent, b'/lookup/someenv/sometype/somekey', b'data')
-        self.assertEqual(response.code, 204)
+        self.assertEqual(response.code, http.NO_CONTENT)
 
         response = self.get(agent, b'/lookup/someenv/sometype/somekey')
-        self.assertEqual(response.code, 200)
+        self.assertEqual(response.code, http.OK)
         self.assertEqual(self.data(response), b'data')
 
 
@@ -129,7 +130,7 @@ class LookupAPITests(SynchronousTestCase):
         """
         agent = ResourceTraversalAgent(self._resource())
         response = self.get(agent, b'/lookup/someenv/sometype/somekey')
-        self.assertEqual(response.code, 404)
+        self.assertEqual(response.code, http.NOT_FOUND)
 
 
     def test_storeTwice(self):
@@ -139,18 +140,18 @@ class LookupAPITests(SynchronousTestCase):
         agent = ResourceTraversalAgent(self._resource())
         response = self.put(
             agent, b'/lookup/someenv/sometype/somekey', b'data')
-        self.assertEqual(response.code, 204)
+        self.assertEqual(response.code, http.NO_CONTENT)
 
         response = self.get(agent, b'/lookup/someenv/sometype/somekey')
-        self.assertEqual(response.code, 200)
+        self.assertEqual(response.code, http.OK)
         self.assertEqual(self.data(response), b'data')
 
         response = self.put(
             agent, b'/lookup/someenv/sometype/somekey', b'data')
-        self.assertEqual(response.code, 204)
+        self.assertEqual(response.code, http.NO_CONTENT)
 
         response = self.get(agent, b'/lookup/someenv/sometype/somekey')
-        self.assertEqual(response.code, 200)
+        self.assertEqual(response.code, http.OK)
         self.assertEqual(self.data(response), b'data')
 
 
@@ -161,18 +162,18 @@ class LookupAPITests(SynchronousTestCase):
         agent = ResourceTraversalAgent(self._resource())
         response = self.put(
             agent, b'/lookup/someenv/sometype/somekey', b'data')
-        self.assertEqual(response.code, 204)
+        self.assertEqual(response.code, http.NO_CONTENT)
 
         response = self.get(agent, b'/lookup/someenv/sometype/somekey')
-        self.assertEqual(response.code, 200)
+        self.assertEqual(response.code, http.OK)
         self.assertEqual(self.data(response), b'data')
 
         response = self.put(
             agent, b'/lookup/someenv/sometype/somekey', b'newdata')
-        self.assertEqual(response.code, 204)
+        self.assertEqual(response.code, http.NO_CONTENT)
 
         response = self.get(agent, b'/lookup/someenv/sometype/somekey')
-        self.assertEqual(response.code, 200)
+        self.assertEqual(response.code, http.OK)
         self.assertEqual(self.data(response), b'newdata')
 
 
@@ -183,21 +184,27 @@ class LookupAPITests(SynchronousTestCase):
         agent = ResourceTraversalAgent(self._resource())
 
         response = self.put(agent, b'/lookup/e1/t1/k1', b'data1')
-        self.assertEqual(response.code, 204)
+        self.assertEqual(response.code, http.NO_CONTENT)
         response = self.put(agent, b'/lookup/e2/t2/k2', b'data2')
-        self.assertEqual(response.code, 204)
+        self.assertEqual(response.code, http.NO_CONTENT)
 
         response = self.get(agent, b'/lookup/e1/t1/k1')
-        self.assertEqual(response.code, 200)
+        self.assertEqual(response.code, http.OK)
         self.assertEqual(self.data(response), b'data1')
 
         response = self.get(agent, b'/lookup/e2/t2/k2')
-        self.assertEqual(response.code, 200)
+        self.assertEqual(response.code, http.OK)
         self.assertEqual(self.data(response), b'data2')
 
-        self.assertEqual(self.get(agent, b'/lookup/e2/t1/k1').code, 404)
-        self.assertEqual(self.get(agent, b'/lookup/e1/t2/k1').code, 404)
-        self.assertEqual(self.get(agent, b'/lookup/e1/t1/k2').code, 404)
-        self.assertEqual(self.get(agent, b'/lookup/e1/t2/k2').code, 404)
-        self.assertEqual(self.get(agent, b'/lookup/e2/t1/k2').code, 404)
-        self.assertEqual(self.get(agent, b'/lookup/e2/t2/k1').code, 404)
+        self.assertEqual(
+            self.get(agent, b'/lookup/e2/t1/k1').code, http.NOT_FOUND)
+        self.assertEqual(
+            self.get(agent, b'/lookup/e1/t2/k1').code, http.NOT_FOUND)
+        self.assertEqual(
+            self.get(agent, b'/lookup/e1/t1/k2').code, http.NOT_FOUND)
+        self.assertEqual(
+            self.get(agent, b'/lookup/e1/t2/k2').code, http.NOT_FOUND)
+        self.assertEqual(
+            self.get(agent, b'/lookup/e2/t1/k2').code, http.NOT_FOUND)
+        self.assertEqual(
+            self.get(agent, b'/lookup/e2/t2/k1').code, http.NOT_FOUND)

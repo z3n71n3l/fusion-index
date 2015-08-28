@@ -4,6 +4,7 @@ from service_identity._common import DNS_ID, verify_service_identity
 from service_identity.pyopenssl import extract_ids
 from twisted.internet.interfaces import ISSLTransport
 from txspinneret.interfaces import ISpinneretResource
+from twisted.web import http
 from txspinneret.resource import NotFound
 from txspinneret.route import Router, Text, routedResource
 from zope.interface import implementer
@@ -92,5 +93,5 @@ class LookupResource(object):
             indexType=self.indexType,
             key=self.key,
             value=request.content.read())
-        request.setResponseCode(204)
+        request.setResponseCode(http.NO_CONTENT)
         return ''
