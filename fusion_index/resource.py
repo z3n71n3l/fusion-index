@@ -1,7 +1,15 @@
+from characteristic import attributes
 from service_identity import CertificateError, VerificationError
 from service_identity._common import DNS_ID, verify_service_identity
 from service_identity.pyopenssl import extract_ids
 from twisted.internet.interfaces import ISSLTransport
+from txspinneret.interfaces import ISpinneretResource
+from twisted.web import http
+from txspinneret.resource import NotFound
+from txspinneret.route import Router, Text, routedResource
+from zope.interface import implementer
+
+from fusion_index.lookup import LookupEntry
 
 
 
@@ -16,7 +24,6 @@ def _verify_hostname(certificate, hostname):
         obligatory_ids=[DNS_ID(hostname)],
         optional_ids=[],
     )
-
 
 
 # XXX: Stolen from Diamond, except this version uses service_identity so it is
@@ -45,3 +52,46 @@ def authenticateRequest(request, hostname):
         else:
             return True
     return False
+
+
+
+@routedResource
+@attributes(['store'])
+class IndexRouter(object):
+    router = Router()
+
+    @router.route(
+        'lookup', Text('environment'), Text('indexType'), Text('key'))
+    def lookup(self, request, params):
+        return LookupResource(store=self.store, **params)
+
+
+
+@implementer(ISpinneretResource)
+@attributes(['store', 'environment', 'indexType', 'key'])
+class LookupResource(object):
+    def render_GET(self, request):
+        try:
+            result = self.store.transact(
+                LookupEntry.get,
+                store=self.store,
+                environment=self.environment,
+                indexType=self.indexType,
+                key=self.key)
+        except KeyError:
+            return NotFound()
+        else:
+            request.setHeader(b'Content-Type', b'application/octet-stream')
+            return result
+
+
+    def render_PUT(self, request):
+        self.store.transact(
+            LookupEntry.set,
+            store=self.store,
+            environment=self.environment,
+            indexType=self.indexType,
+            key=self.key,
+            value=request.content.read())
+        request.setResponseCode(http.NO_CONTENT)
+        return ''
