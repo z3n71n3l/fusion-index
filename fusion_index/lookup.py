@@ -20,7 +20,7 @@ class LookupEntry(Item):
     """, allowNone=False)
 
     indexType = text(doc="""
-    The index type this entry exists.
+    The index type for this index entry.
 
     Usually something like C{u'idNumber'}.
     """, allowNone=False)
@@ -37,6 +37,23 @@ class LookupEntry(Item):
 
     @classmethod
     def get(cls, store, environment, indexType, key):
+        """
+        Get the value of an index entry.
+
+        @type store: L{axiom.store.Store}
+        @param store: The store to use.
+
+        @type environment: L{unicode}
+        @param environment: The environment.
+
+        @type indexType: L{unicode}
+        @param indexType: The type.
+
+        @type key: L{unicode}
+        @param key: The key.
+
+        @raises KeyError: if the entry does not exist.
+        """
         return store.findUnique(
             cls,
             AND(cls.environment == environment,
@@ -46,6 +63,27 @@ class LookupEntry(Item):
 
     @classmethod
     def set(cls, store, environment, indexType, key, value):
+        """
+        Set the value of an index entry.
+
+        If the entry already exists in the index, the previous value will be
+        overwritten.
+
+        @type store: L{axiom.store.Store}
+        @param store: The store to use.
+
+        @type environment: L{unicode}
+        @param environment: The environment.
+
+        @type indexType: L{unicode}
+        @param indexType: The type.
+
+        @type key: L{unicode}
+        @param key: The key.
+
+        @type value: L{bytes}
+        @param value: The value to set.
+        """
         item = store.findOrCreate(
             cls,
             environment=environment,
