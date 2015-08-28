@@ -5,7 +5,7 @@ from service_identity.pyopenssl import extract_ids
 from twisted.internet.interfaces import ISSLTransport
 from txspinneret.interfaces import ISpinneretResource
 from txspinneret.resource import NotFound
-from txspinneret.route import Any, Router, routedResource
+from txspinneret.route import Text, Router, routedResource
 from zope.interface import implementer
 
 from fusion_index.lookup import LookupEntry
@@ -59,7 +59,8 @@ def authenticateRequest(request, hostname):
 class IndexRouter(object):
     router = Router()
 
-    @router.route('lookup', Any('environment'), Any('indexType'), Any('key'))
+    @router.route(
+        'lookup', Text('environment'), Text('indexType'), Text('key'))
     def lookup(self, request, params):
         return LookupResource(store=self.store, **params)
 
