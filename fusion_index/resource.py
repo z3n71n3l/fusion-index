@@ -5,7 +5,7 @@ from service_identity.pyopenssl import extract_ids
 from twisted.internet.interfaces import ISSLTransport
 from txspinneret.interfaces import ISpinneretResource
 from txspinneret.resource import NotFound
-from txspinneret.route import Text, Router, routedResource
+from txspinneret.route import Router, Text, routedResource
 from zope.interface import implementer
 
 from fusion_index.lookup import LookupEntry
