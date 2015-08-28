@@ -18,6 +18,7 @@ setup(
         'eliot >= 0.8.0',
         'testtools',
         'characteristic',
+        'hypothesis',
         ],
     license='MIT',
     packages=find_packages() + ['axiom.plugins'],

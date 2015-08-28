@@ -1,7 +1,7 @@
 """
 Simple Axiom-based lookup index implementation.
 """
-from axiom.attributes import AND, compoundIndex, text, bytes
+from axiom.attributes import AND, bytes, compoundIndex, text
 from axiom.item import Item
 
 
