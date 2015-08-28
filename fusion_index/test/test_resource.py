@@ -198,3 +198,6 @@ class LookupAPITests(SynchronousTestCase):
         self.assertEqual(self.get(agent, b'/lookup/e2/t1/k1').code, 404)
         self.assertEqual(self.get(agent, b'/lookup/e1/t2/k1').code, 404)
         self.assertEqual(self.get(agent, b'/lookup/e1/t1/k2').code, 404)
+        self.assertEqual(self.get(agent, b'/lookup/e1/t2/k2').code, 404)
+        self.assertEqual(self.get(agent, b'/lookup/e2/t1/k2').code, 404)
+        self.assertEqual(self.get(agent, b'/lookup/e2/t2/k1').code, 404)
