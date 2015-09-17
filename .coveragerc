@@ -1,0 +1,8 @@
+[run]
+branch = True
+source = fusion_index
+
+[paths]
+source =
+  fusion_index
+  .tox/*/lib/python*/site-packages/fusion_index
