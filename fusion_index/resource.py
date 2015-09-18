@@ -55,7 +55,6 @@ def authenticateRequest(request, hostname):
 
 
 
-@routedResource
 @attributes(['store'])
 class IndexRouter(object):
     router = Router()

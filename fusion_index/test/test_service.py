@@ -1,5 +1,5 @@
 """
-Tests for the Axiomatic plugin.
+Tests for L{fusion_index.service}.
 """
 import os
 import sys
@@ -10,9 +10,53 @@ from axiom.scripts.axiomatic import Options as AxiomaticOptions
 from axiom.store import Store
 from axiom.test.util import CommandStub
 from twisted.application.service import IService
-from twisted.trial.unittest import SynchronousTestCase
+from twisted.internet.defer import inlineCallbacks
+from twisted.python.filepath import FilePath
+from twisted.trial.unittest import SynchronousTestCase, TestCase
 
 from fusion_index.service import FusionIndexConfiguration, FusionIndexService
+from fusion_index.resource import IndexRouter
+
+
+
+class FusionIndexServiceTests(TestCase):
+    """
+    Tests for L{FusionIndexService}.
+    """
+    @inlineCallbacks
+    def test_startService(self):
+        """
+        L{FusionIndexService.startService} creates and starts a web server
+        hooked up to a TLS endpoint.
+        """
+        certPath = FilePath(__file__).sibling('data').child('test.cert')
+        certPath = certPath.path.decode('utf-8')
+        s = FusionIndexService(
+            caPath=certPath,
+            certPath=certPath)
+        s.startService()
+        self.assertNotIdentical(s._endpointService, None)
+        self.assertTrue(s.running)
+        self.assertTrue(s._endpointService.running)
+        yield s.stopService()
+        self.assertFalse(s.running)
+        self.assertFalse(s._endpointService.running)
+
+
+    def test_serviceDescription(self):
+        """
+        The service description has the data from the service configuration.
+        """
+        certPath = FilePath(__file__).sibling('data').child('test.cert')
+        certPath = certPath.path.decode('utf-8')
+        s = FusionIndexService(
+            caPath=certPath,
+            certPath=certPath)
+        desc = s._serviceDescription()
+
+        self.assertEqual(desc.port, s.port)
+        self.assertEqual(desc.interface, s.interface)
+        self.assertIsInstance(desc.router, IndexRouter)
 
 
 

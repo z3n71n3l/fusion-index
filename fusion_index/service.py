@@ -2,7 +2,36 @@ from axiom import attributes as a
 from axiom.dependency import installOn
 from axiom.item import Item
 from axiom.scripts.axiomatic import AxiomaticCommand
+from characteristic import attributes
+from fusion_util.cert import chainCerts
+from twisted.application.internet import StreamServerEndpointService
 from twisted.application.service import IService, Service
+from twisted.internet import reactor
+from twisted.internet.endpoints import SSL4ServerEndpoint
+from twisted.internet.ssl import (
+    Certificate, CertificateOptions, PrivateCertificate)
+from twisted.python.filepath import FilePath
+from twisted.web.server import Site
+
+from fusion_index.resource import IndexRouter
+
+
+
+@attributes(['reactor', 'port', 'interface', 'options', 'router'])
+class _ServiceDescription(object):
+    """
+    Description of the underlying service.
+    """
+    def makeService(self):
+        """
+        Construct a service from this description.
+        """
+        factory = Site(self.router.router.resource())
+        return StreamServerEndpointService(
+            SSL4ServerEndpoint(
+                self.reactor, self.port, self.options,
+                interface=self.interface),
+            factory)
 
 
 
@@ -16,10 +45,48 @@ class FusionIndexService(Item, Service):
     caPath = a.text(allowNone=False)
     certPath = a.text(allowNone=False)
 
-    endpointService = a.inmemory()
+    _endpointService = a.inmemory()
     parent = a.inmemory()
     name = a.inmemory()
     running = a.inmemory()
+
+    def activate(self):
+        self.parent = None
+        self.name = None
+        self.running = False
+
+
+    def _serviceDescription(self):
+        """
+        Produce a description of the service we should start.
+        """
+        ca = Certificate.loadPEM(
+            FilePath(self.caPath.encode('utf-8')).getContent())
+        certBytes = FilePath(self.certPath.encode('utf-8')).getContent()
+        cert = PrivateCertificate.loadPEM(certBytes)
+        # Can't use PrivateCertificate.options until Twisted #6361 is fixed
+        options = CertificateOptions(
+            privateKey=cert.privateKey.original,
+            certificate=cert.original,
+            trustRoot=ca,
+            extraCertChain=chainCerts(certBytes))
+        router = IndexRouter(store=self.store)
+        return _ServiceDescription(
+            reactor=reactor, port=self.port, interface=self.interface,
+            options=options, router=router)
+
+
+    # IService
+
+    def startService(self):
+        self.running = True
+        self._endpointService = self._serviceDescription().makeService()
+        self._endpointService.startService()
+
+
+    def stopService(self):
+        self.running = False
+        return self._endpointService.stopService()
 
 
 
