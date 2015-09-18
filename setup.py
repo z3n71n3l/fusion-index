@@ -19,6 +19,8 @@ setup(
         'testtools',
         'characteristic',
         'hypothesis',
+        'eliot',
+        'fusion_util',
         ],
     license='MIT',
     packages=find_packages() + ['axiom.plugins'],

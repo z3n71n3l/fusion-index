@@ -9,13 +9,15 @@ from axiom.dependency import installedOn
 from axiom.scripts.axiomatic import Options as AxiomaticOptions
 from axiom.store import Store
 from axiom.test.util import CommandStub
+from eliot.testing import LoggedAction, capture_logging
 from twisted.application.service import IService
 from twisted.internet.defer import inlineCallbacks
 from twisted.python.filepath import FilePath
 from twisted.trial.unittest import SynchronousTestCase, TestCase
 
-from fusion_index.service import FusionIndexConfiguration, FusionIndexService
+from fusion_index.logging import LOG_START_SERVICE, LOG_STOP_SERVICE
 from fusion_index.resource import IndexRouter
+from fusion_index.service import FusionIndexConfiguration, FusionIndexService
 
 
 
@@ -23,8 +25,21 @@ class FusionIndexServiceTests(TestCase):
     """
     Tests for L{FusionIndexService}.
     """
+    def assertServiceLogging(self, logger):
+        """
+        The start service action is logged, with fields describing the service
+        to be started, as well as the stop service action.
+        """
+        [start] = LoggedAction.of_type(logger.messages, LOG_START_SERVICE)
+        desc = start.start_message.get('description').asField()
+        self.assertEquals(desc['port'], 8443)
+        self.assertEquals(desc['router'], '<IndexRouter(store=None)>')
+        [stop] = LoggedAction.of_type(logger.messages, LOG_STOP_SERVICE)
+
+
+    @capture_logging(assertServiceLogging)
     @inlineCallbacks
-    def test_startService(self):
+    def test_startService(self, logger):
         """
         L{FusionIndexService.startService} creates and starts a web server
         hooked up to a TLS endpoint.
@@ -33,7 +48,8 @@ class FusionIndexServiceTests(TestCase):
         certPath = certPath.path.decode('utf-8')
         s = FusionIndexService(
             caPath=certPath,
-            certPath=certPath)
+            certPath=certPath,
+            port=8443)
         s.startService()
         self.assertNotIdentical(s._endpointService, None)
         self.assertTrue(s.running)

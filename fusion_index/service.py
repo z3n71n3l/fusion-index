@@ -3,6 +3,7 @@ from axiom.dependency import installOn
 from axiom.item import Item
 from axiom.scripts.axiomatic import AxiomaticCommand
 from characteristic import attributes
+from eliot.twisted import DeferredContext
 from fusion_util.cert import chainCerts
 from twisted.application.internet import StreamServerEndpointService
 from twisted.application.service import IService, Service
@@ -13,6 +14,7 @@ from twisted.internet.ssl import (
 from twisted.python.filepath import FilePath
 from twisted.web.server import Site
 
+from fusion_index.logging import LOG_START_SERVICE, LOG_STOP_SERVICE
 from fusion_index.resource import IndexRouter
 
 
@@ -32,6 +34,19 @@ class _ServiceDescription(object):
                 self.reactor, self.port, self.options,
                 interface=self.interface),
             factory)
+
+
+    def asField(self):
+        """
+        Return a dictionary suitable for serialization as an Eliot field.
+        """
+        return {
+            'reactor': repr(self.reactor),
+            'port': self.port,
+            'interface': self.interface,
+            'options': repr(self.options),
+            'router': repr(self.router),
+            }
 
 
 
@@ -79,14 +94,20 @@ class FusionIndexService(Item, Service):
     # IService
 
     def startService(self):
-        self.running = True
-        self._endpointService = self._serviceDescription().makeService()
-        self._endpointService.startService()
+        desc = self._serviceDescription()
+        with LOG_START_SERVICE(description=desc):
+            self.running = True
+            self._endpointService = desc.makeService()
+            self._endpointService.startService()
 
 
     def stopService(self):
-        self.running = False
-        return self._endpointService.stopService()
+        action = LOG_STOP_SERVICE()
+        with action.context():
+            self.running = False
+            d = DeferredContext(self._endpointService.stopService())
+            d.addActionFinish()
+            return d.result
 
 
 

@@ -2,6 +2,7 @@ from collections import namedtuple
 from StringIO import StringIO
 
 from axiom.store import Store
+from eliot.testing import LoggedAction, assertContainsFields, capture_logging
 from testtools import TestCase
 from twisted.internet.interfaces import ISSLTransport
 from twisted.internet.ssl import CertificateOptions, PrivateCertificate
@@ -11,6 +12,7 @@ from twisted.web import http
 from twisted.web.client import FileBodyProducer, readBody
 from zope.interface import implementer
 
+from fusion_index.logging import LOG_LOOKUP_GET, LOG_LOOKUP_PUT
 from fusion_index.resource import IndexRouter, authenticateRequest
 from fusion_index.test.util import ResourceTraversalAgent
 
@@ -108,7 +110,29 @@ class LookupAPITests(SynchronousTestCase):
         return self.successResultOf(readBody(response))
 
 
-    def test_storeAndRetrieve(self):
+    def assertLookupLogging(self, logger):
+        """
+        The put action is logged, followed by the get action.
+        """
+        [put] = LoggedAction.of_type(logger.messages, LOG_LOOKUP_PUT)
+        assertContainsFields(
+            self, put.start_message,
+            {'environment': u'someenv',
+             'indexType': u'sometype',
+             'key': u'somekey'})
+        assertContainsFields(self, put.end_message, {'value': b'data'})
+
+        [get] = LoggedAction.of_type(logger.messages, LOG_LOOKUP_GET)
+        assertContainsFields(
+            self, get.start_message,
+            {'environment': u'someenv',
+             'indexType': u'sometype',
+             'key': u'somekey'})
+        assertContainsFields(self, get.end_message, {'value': b'data'})
+
+
+    @capture_logging(assertLookupLogging)
+    def test_storeAndRetrieve(self, logger):
         """
         Storing a value in the lookup index and then retrieving it results in
         the same value that was originally stored.
@@ -123,7 +147,23 @@ class LookupAPITests(SynchronousTestCase):
         self.assertEqual(self.data(response), b'data')
 
 
-    def test_retrieveMissing(self):
+    def assertMissingGetLogging(self, logger):
+        """
+        When a I{GET} results in I{Not found}, a successful action is logged
+        with a C{None} value.
+        """
+        [get] = LoggedAction.of_type(logger.messages, LOG_LOOKUP_GET)
+        assertContainsFields(
+            self, get.start_message,
+            {'environment': u'someenv',
+             'indexType': u'sometype',
+             'key': u'somekey'})
+        assertContainsFields(self, get.end_message, {'value': None})
+        self.assertTrue(get.succeeded)
+
+
+    @capture_logging(assertMissingGetLogging)
+    def test_retrieveMissing(self, logger):
         """
         Trying to retrieve an item that is not present in the lookup index
         results in a 404 response.

@@ -3,12 +3,13 @@ from service_identity import CertificateError, VerificationError
 from service_identity._common import DNS_ID, verify_service_identity
 from service_identity.pyopenssl import extract_ids
 from twisted.internet.interfaces import ISSLTransport
-from txspinneret.interfaces import ISpinneretResource
 from twisted.web import http
+from txspinneret.interfaces import ISpinneretResource
 from txspinneret.resource import NotFound
-from txspinneret.route import Router, Text, routedResource
+from txspinneret.route import Router, Text
 from zope.interface import implementer
 
+from fusion_index.logging import LOG_LOOKUP_GET, LOG_LOOKUP_PUT
 from fusion_index.lookup import LookupEntry
 
 
@@ -70,27 +71,41 @@ class IndexRouter(object):
 @attributes(['store', 'environment', 'indexType', 'key'])
 class LookupResource(object):
     def render_GET(self, request):
-        try:
-            result = self.store.transact(
-                LookupEntry.get,
-                store=self.store,
-                environment=self.environment,
-                indexType=self.indexType,
-                key=self.key)
-        except KeyError:
-            return NotFound()
-        else:
-            request.setHeader(b'Content-Type', b'application/octet-stream')
-            return result
+        action = LOG_LOOKUP_GET(
+            environment=self.environment,
+            indexType=self.indexType,
+            key=self.key)
+        with action as a:
+            try:
+                result = self.store.transact(
+                    LookupEntry.get,
+                    store=self.store,
+                    environment=self.environment,
+                    indexType=self.indexType,
+                    key=self.key)
+            except KeyError:
+                a.add_success_fields(value=None)
+                return NotFound()
+            else:
+                request.setHeader(b'Content-Type', b'application/octet-stream')
+                a.add_success_fields(value=result)
+                return result
 
 
     def render_PUT(self, request):
-        self.store.transact(
-            LookupEntry.set,
-            store=self.store,
+        action = LOG_LOOKUP_PUT(
             environment=self.environment,
             indexType=self.indexType,
-            key=self.key,
-            value=request.content.read())
-        request.setResponseCode(http.NO_CONTENT)
-        return ''
+            key=self.key)
+        with action as a:
+            value = request.content.read()
+            a.add_success_fields(value=value)
+            self.store.transact(
+                LookupEntry.set,
+                store=self.store,
+                environment=self.environment,
+                indexType=self.indexType,
+                key=self.key,
+                value=value)
+            request.setResponseCode(http.NO_CONTENT)
+            return ''
