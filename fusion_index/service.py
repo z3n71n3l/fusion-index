@@ -95,7 +95,7 @@ class FusionIndexConfiguration(AxiomaticCommand):
     Axiomatic subcommand plugin for inspecting and modifying the index service
     configuration.
     """
-    name = 'fusion_index'
+    name = 'fusion-index'
     description = 'Fusion index service configuration'
 
     optFlags = [

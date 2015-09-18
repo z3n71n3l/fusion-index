@@ -62,7 +62,7 @@ class FusionIndexServiceTests(TestCase):
 
 class ConfigurationCommandTests(SynchronousTestCase):
     """
-    Tests for the I{axiomatic fusion_index} command.
+    Tests for the I{axiomatic fusion-index} command.
     """
     def setUp(self):
         """
@@ -117,7 +117,7 @@ class ConfigurationCommandTests(SynchronousTestCase):
         I{axiomatic}.
         """
         subCommands = AxiomaticOptions().subCommands
-        [options] = [cmd[2] for cmd in subCommands if cmd[0] == 'fusion_index']
+        [options] = [cmd[2] for cmd in subCommands if cmd[0] == 'fusion-index']
         self.assertIdentical(options, FusionIndexConfiguration)
 
 
