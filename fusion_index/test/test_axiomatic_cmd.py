@@ -6,9 +6,12 @@ import sys
 from StringIO import StringIO
 
 from axiom.scripts.axiomatic import Options as AxiomaticOptions
+from axiom.store import Store
+from axiom.test.util import CommandStub
+from twisted.application.service import IService
 from twisted.trial.unittest import SynchronousTestCase
 
-from fusion_index.service import FusionIndexConfiguration
+from fusion_index.service import FusionIndexConfiguration, FusionIndexService
 
 
 
@@ -36,6 +39,16 @@ class ConfigurationCommandTests(SynchronousTestCase):
             os.environ['COLUMNS'] = self.oldColumns
 
 
+    def _makeConfig(self, store):
+        """
+        Create a L{FusionIndexConfiguration} instance hooked directly up to the
+        given store.
+        """
+        config = FusionIndexConfiguration()
+        config.parent = CommandStub(store, 'port')
+        return config
+
+
     def assertSuccessStatus(self, options, arguments):
         """
         Parse the given arguments with the given options object and assert that
@@ -53,13 +66,6 @@ class ConfigurationCommandTests(SynchronousTestCase):
         self.assertEqual(exc.args, (code,))
 
 
-    def assertSpacelessEqual(self, first, second):
-        """
-        Assert the equality of two strings without respect to their whitespace.
-        """
-        self.assertEqual(' '.join(first.split()), ' '.join(second.split()))
-
-
     def test_axiomaticSubcommand(self):
         """
         L{FusionIndexConfiguration} is available as a subcommand of
@@ -68,3 +74,32 @@ class ConfigurationCommandTests(SynchronousTestCase):
         subCommands = AxiomaticOptions().subCommands
         [options] = [cmd[2] for cmd in subCommands if cmd[0] == 'fusion_index']
         self.assertIdentical(options, FusionIndexConfiguration)
+
+
+    def test_noServiceOutput(self):
+        """
+        If no service exists in the store, and creating one is not enabled, an
+        error message is printed.
+        """
+        store = Store()
+        config = self._makeConfig(store)
+        self.assertFailStatus(1, config, [])
+        self.assertEqual(
+            'No existing service; pass --create to allow creation.\n',
+            sys.stdout.getvalue())
+        self.assertEqual(store.query(FusionIndexService).count(), 0)
+
+
+    def test_serviceCreation(self):
+        """
+        If no service exists in the store, and creation is requested, the item
+        is created and installed.
+        """
+        store = Store()
+        config = self._makeConfig(store)
+        self.assertSuccessStatus(config, ['--create'])
+        output = sys.stdout.getvalue()
+        self.assertIn('FusionIndexService', output)
+        self.assertEqual(store.query(FusionIndexService).count(), 1)
+        s = store.findUnique(FusionIndexService)
+        self.assertIn(s, list(store.powerupsFor(IService)))
