@@ -78,6 +78,23 @@ class authenticateRequestTests(TestCase):
             False, authenticateRequest(request, u'not_localhost'))
 
 
+    def test_nonTLSTransport(self):
+        """
+        L{authenticateRequest} returns C{False} if the client is not connected
+        via a TLS transport.
+        """
+        class FakeTransport(object):
+            pass
+
+        FakeRequest = namedtuple('Request', 'channel')
+        FakeChannel = namedtuple('Channel', 'transport')
+        channel = FakeChannel(FakeTransport())
+        request = FakeRequest(channel)
+
+        self.assertEqual(
+            False, authenticateRequest(request, u'localhost'))
+
+
 
 class LookupAPITests(SynchronousTestCase):
     """

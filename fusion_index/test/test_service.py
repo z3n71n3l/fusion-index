@@ -189,7 +189,8 @@ class ConfigurationCommandTests(SynchronousTestCase):
         service = FusionIndexService(
             store=store, port=1234, caPath=u'foo', certPath=u'foo')
         config = self._makeConfig(store)
-        self.assertSuccessStatus(config, ['--port', '4321'])
+        self.assertSuccessStatus(
+            config, ['--port', '4321', '--interface', 'localhost'])
 
         output = sys.stdout.getvalue()
         self.assertIn('FusionIndexService', output)
