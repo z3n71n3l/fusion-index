@@ -5,6 +5,7 @@ import os
 import sys
 from StringIO import StringIO
 
+from axiom.dependency import installedOn
 from axiom.scripts.axiomatic import Options as AxiomaticOptions
 from axiom.store import Store
 from axiom.test.util import CommandStub
@@ -97,9 +98,23 @@ class ConfigurationCommandTests(SynchronousTestCase):
         """
         store = Store()
         config = self._makeConfig(store)
-        self.assertSuccessStatus(config, ['--create'])
+        self.assertSuccessStatus(
+            config,
+            ['--create',
+             '--ca', 'ca.crt',
+             '--cert', 'cert.crt'])
+
         output = sys.stdout.getvalue()
         self.assertIn('FusionIndexService', output)
+        self.assertIn('ca.crt', output)
+        self.assertIn('cert.crt', output)
+
         self.assertEqual(store.query(FusionIndexService).count(), 1)
         s = store.findUnique(FusionIndexService)
         self.assertIn(s, list(store.powerupsFor(IService)))
+        self.assertIdentical(installedOn(s), store)
+
+        self.assertEqual(s.interface, '')
+        self.assertEqual(s.port, 8443)
+        self.assertEqual(s.caPath, u'ca.crt')
+        self.assertEqual(s.certPath, u'cert.crt')
