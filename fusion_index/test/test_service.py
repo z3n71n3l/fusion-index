@@ -138,7 +138,7 @@ class ConfigurationCommandTests(SynchronousTestCase):
     def test_serviceCreation(self):
         """
         If no service exists in the store, and creation is requested, the item
-        is created and installed.
+        is created and installed, and the state of the item is printed out.
         """
         store = Store()
         config = self._makeConfig(store)
@@ -162,3 +162,36 @@ class ConfigurationCommandTests(SynchronousTestCase):
         self.assertEqual(s.port, 8443)
         self.assertEqual(s.caPath, u'ca.crt')
         self.assertEqual(s.certPath, u'cert.crt')
+
+
+    def test_serviceModification(self):
+        """
+        If a service already exists, it is modified according to any options
+        that were passed, and the resulting state is printed out.
+        """
+        store = Store()
+        service = FusionIndexService(
+            store=store, port=1234, caPath=u'foo', certPath=u'foo')
+        config = self._makeConfig(store)
+        self.assertSuccessStatus(config, ['--port', '4321'])
+
+        output = sys.stdout.getvalue()
+        self.assertIn('FusionIndexService', output)
+        self.assertIn('port=4321', output)
+        self.assertEqual(service.port, 4321)
+
+
+    def test_serviceNoop(self):
+        """
+        If a service already exists and no options are passed, the state is
+        simply printed out.
+        """
+        store = Store()
+        FusionIndexService(
+            store=store, port=1234, caPath=u'foo', certPath=u'foo')
+        config = self._makeConfig(store)
+        self.assertSuccessStatus(config, [])
+
+        output = sys.stdout.getvalue()
+        self.assertIn('FusionIndexService', output)
+        self.assertIn('port=1234', output)

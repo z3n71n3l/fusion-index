@@ -103,8 +103,8 @@ class FusionIndexConfiguration(AxiomaticCommand):
         ]
 
     optParameters = [
-        ('interface', 'i', '', 'Interface to listen on'),
-        ('port', 'p', 8443, 'Port to listen on'),
+        ('interface', 'i', None, 'Interface to listen on'),
+        ('port', 'p', None, 'Port to listen on'),
         ('ca', None, None, 'Path to CA certificate for authentication'),
         ('cert', None, None, 'Path to server certificate/key'),
         ]
@@ -127,15 +127,18 @@ class FusionIndexConfiguration(AxiomaticCommand):
 
 
     def _configure(self, store):
-        s = store.findUnique(FusionIndexService, default=None)
-        if s is None:
+        service = store.findUnique(FusionIndexService, default=None)
+        if service is None:
             if self['create']:
                 service = FusionIndexService(store=store, **self._opts())
                 installOn(service, store)
-                print service
             else:
                 print 'No existing service; pass --create to allow creation.'
                 raise SystemExit(1)
+        else:
+            for k, v in self._opts().iteritems():
+                setattr(service, k, v)
+        print service
 
 
     def postOptions(self):
