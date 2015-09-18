@@ -82,7 +82,7 @@ class LookupAPITests(SynchronousTestCase):
     Tests for the Lookup HTTP API.
     """
     def _resource(self):
-        return IndexRouter(store=Store())
+        return IndexRouter(store=Store()).router.resource()
 
 
     def get(self, agent, path):
