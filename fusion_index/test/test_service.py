@@ -31,9 +31,8 @@ class FusionIndexServiceTests(TestCase):
         to be started, as well as the stop service action.
         """
         [start] = LoggedAction.of_type(logger.messages, LOG_START_SERVICE)
-        desc = start.start_message.get('description').asField()
-        self.assertEquals(desc['port'], 8443)
-        self.assertEquals(desc['router'], '<IndexRouter(store=None)>')
+        desc = start.start_message.get('description')
+        self.assertEquals(desc.port, 8443)
         [stop] = LoggedAction.of_type(logger.messages, LOG_STOP_SERVICE)
 
 

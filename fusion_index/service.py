@@ -36,19 +36,6 @@ class _ServiceDescription(object):
             factory)
 
 
-    def asField(self):
-        """
-        Return a dictionary suitable for serialization as an Eliot field.
-        """
-        return {
-            'reactor': repr(self.reactor),
-            'port': self.port,
-            'interface': self.interface,
-            'options': repr(self.options),
-            'router': repr(self.router),
-            }
-
-
 
 class FusionIndexService(Item, Service):
     """
