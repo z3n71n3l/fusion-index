@@ -6,6 +6,10 @@ cache:
   directories:
     - $HOME/.cache/pip
 
+branches:
+  only:
+    - master
+
 install:
   - pip install -U pip setuptools
   - pip install tox codecov
