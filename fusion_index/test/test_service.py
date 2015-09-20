@@ -45,7 +45,9 @@ class FusionIndexServiceTests(TestCase):
         """
         certPath = FilePath(__file__).sibling('data').child('test.cert')
         certPath = certPath.path.decode('utf-8')
+        store = Store()
         s = FusionIndexService(
+            store=store,
             caPath=certPath,
             certPath=certPath,
             port=8443)
