@@ -96,35 +96,36 @@ class authenticateRequestTests(TestCase):
 
 
 
+def get(self, agent, path):
+    """
+    Simulate a GET request.
+    """
+    return self.successResultOf(agent.request(b'GET', path))
+
+
+def put(self, agent, path, data):
+    """
+    Simulate a PUT request.
+    """
+    return self.successResultOf(
+        agent.request(
+            b'PUT', path, bodyProducer=FileBodyProducer(StringIO(data))))
+
+
+def data(self, response):
+    """
+    Get the body from a response.
+    """
+    return self.successResultOf(readBody(response))
+
+
+
 class LookupAPITests(SynchronousTestCase):
     """
     Tests for the Lookup HTTP API.
     """
     def _resource(self):
         return IndexRouter(store=Store()).router.resource()
-
-
-    def get(self, agent, path):
-        """
-        Simulate a GET request.
-        """
-        return self.successResultOf(agent.request(b'GET', path))
-
-
-    def put(self, agent, path, data):
-        """
-        Simulate a PUT request.
-        """
-        return self.successResultOf(
-            agent.request(
-                b'PUT', path, bodyProducer=FileBodyProducer(StringIO(data))))
-
-
-    def data(self, response):
-        """
-        Get the body from a response.
-        """
-        return self.successResultOf(readBody(response))
 
 
     def assertLookupLogging(self, logger):
@@ -155,13 +156,13 @@ class LookupAPITests(SynchronousTestCase):
         the same value that was originally stored.
         """
         agent = ResourceTraversalAgent(self._resource())
-        response = self.put(
-            agent, b'/lookup/someenv/sometype/somekey', b'data')
+        response = put(
+            self, agent, b'/lookup/someenv/sometype/somekey', b'data')
         self.assertEqual(response.code, http.NO_CONTENT)
 
-        response = self.get(agent, b'/lookup/someenv/sometype/somekey')
+        response = get(self, agent, b'/lookup/someenv/sometype/somekey')
         self.assertEqual(response.code, http.OK)
-        self.assertEqual(self.data(response), b'data')
+        self.assertEqual(data(self, response), b'data')
 
 
     def assertMissingGetLogging(self, logger):
@@ -186,7 +187,7 @@ class LookupAPITests(SynchronousTestCase):
         results in a 404 response.
         """
         agent = ResourceTraversalAgent(self._resource())
-        response = self.get(agent, b'/lookup/someenv/sometype/somekey')
+        response = get(self, agent, b'/lookup/someenv/sometype/somekey')
         self.assertEqual(response.code, http.NOT_FOUND)
 
 
@@ -195,21 +196,21 @@ class LookupAPITests(SynchronousTestCase):
         Storing a value in the lookup index is idempotent.
         """
         agent = ResourceTraversalAgent(self._resource())
-        response = self.put(
-            agent, b'/lookup/someenv/sometype/somekey', b'data')
+        response = put(
+            self, agent, b'/lookup/someenv/sometype/somekey', b'data')
         self.assertEqual(response.code, http.NO_CONTENT)
 
-        response = self.get(agent, b'/lookup/someenv/sometype/somekey')
+        response = get(self, agent, b'/lookup/someenv/sometype/somekey')
         self.assertEqual(response.code, http.OK)
-        self.assertEqual(self.data(response), b'data')
+        self.assertEqual(data(self, response), b'data')
 
-        response = self.put(
-            agent, b'/lookup/someenv/sometype/somekey', b'data')
+        response = put(
+            self, agent, b'/lookup/someenv/sometype/somekey', b'data')
         self.assertEqual(response.code, http.NO_CONTENT)
 
-        response = self.get(agent, b'/lookup/someenv/sometype/somekey')
+        response = get(self, agent, b'/lookup/someenv/sometype/somekey')
         self.assertEqual(response.code, http.OK)
-        self.assertEqual(self.data(response), b'data')
+        self.assertEqual(data(self, response), b'data')
 
 
     def test_storeOverwrite(self):
@@ -217,21 +218,21 @@ class LookupAPITests(SynchronousTestCase):
         Storing a value in the lookup index overwrites any existing value.
         """
         agent = ResourceTraversalAgent(self._resource())
-        response = self.put(
-            agent, b'/lookup/someenv/sometype/somekey', b'data')
+        response = put(
+            self, agent, b'/lookup/someenv/sometype/somekey', b'data')
         self.assertEqual(response.code, http.NO_CONTENT)
 
-        response = self.get(agent, b'/lookup/someenv/sometype/somekey')
+        response = get(self, agent, b'/lookup/someenv/sometype/somekey')
         self.assertEqual(response.code, http.OK)
-        self.assertEqual(self.data(response), b'data')
+        self.assertEqual(data(self, response), b'data')
 
-        response = self.put(
-            agent, b'/lookup/someenv/sometype/somekey', b'newdata')
+        response = put(
+            self, agent, b'/lookup/someenv/sometype/somekey', b'newdata')
         self.assertEqual(response.code, http.NO_CONTENT)
 
-        response = self.get(agent, b'/lookup/someenv/sometype/somekey')
+        response = get(self, agent, b'/lookup/someenv/sometype/somekey')
         self.assertEqual(response.code, http.OK)
-        self.assertEqual(self.data(response), b'newdata')
+        self.assertEqual(data(self, response), b'newdata')
 
 
     def test_storeMultiple(self):
@@ -240,28 +241,37 @@ class LookupAPITests(SynchronousTestCase):
         """
         agent = ResourceTraversalAgent(self._resource())
 
-        response = self.put(agent, b'/lookup/e1/t1/k1', b'data1')
+        response = put(self, agent, b'/lookup/e1/t1/k1', b'data1')
         self.assertEqual(response.code, http.NO_CONTENT)
-        response = self.put(agent, b'/lookup/e2/t2/k2', b'data2')
+        response = put(self, agent, b'/lookup/e2/t2/k2', b'data2')
         self.assertEqual(response.code, http.NO_CONTENT)
 
-        response = self.get(agent, b'/lookup/e1/t1/k1')
+        response = get(self, agent, b'/lookup/e1/t1/k1')
         self.assertEqual(response.code, http.OK)
-        self.assertEqual(self.data(response), b'data1')
+        self.assertEqual(data(self, response), b'data1')
 
-        response = self.get(agent, b'/lookup/e2/t2/k2')
+        response = get(self, agent, b'/lookup/e2/t2/k2')
         self.assertEqual(response.code, http.OK)
-        self.assertEqual(self.data(response), b'data2')
+        self.assertEqual(data(self, response), b'data2')
 
         self.assertEqual(
-            self.get(agent, b'/lookup/e2/t1/k1').code, http.NOT_FOUND)
+            get(self, agent, b'/lookup/e2/t1/k1').code, http.NOT_FOUND)
         self.assertEqual(
-            self.get(agent, b'/lookup/e1/t2/k1').code, http.NOT_FOUND)
+            get(self, agent, b'/lookup/e1/t2/k1').code, http.NOT_FOUND)
         self.assertEqual(
-            self.get(agent, b'/lookup/e1/t1/k2').code, http.NOT_FOUND)
+            get(self, agent, b'/lookup/e1/t1/k2').code, http.NOT_FOUND)
         self.assertEqual(
-            self.get(agent, b'/lookup/e1/t2/k2').code, http.NOT_FOUND)
+            get(self, agent, b'/lookup/e1/t2/k2').code, http.NOT_FOUND)
         self.assertEqual(
-            self.get(agent, b'/lookup/e2/t1/k2').code, http.NOT_FOUND)
+            get(self, agent, b'/lookup/e2/t1/k2').code, http.NOT_FOUND)
         self.assertEqual(
-            self.get(agent, b'/lookup/e2/t2/k1').code, http.NOT_FOUND)
+            get(self, agent, b'/lookup/e2/t2/k1').code, http.NOT_FOUND)
+
+
+
+class SearchAPITests(SynchronousTestCase):
+    """
+    Tests for the Search HTTP API.
+    """
+    def _resource(self):
+        return IndexRouter(store=Store()).router.resource()
