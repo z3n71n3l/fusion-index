@@ -84,6 +84,8 @@ class FusionIndexService(Item, Service):
         desc = self._serviceDescription()
         with LOG_START_SERVICE(description=desc):
             self.running = True
+            self.store.querySQL('PRAGMA journal_mode=WAL;')
+            self.store.querySQL('PRAGMA synchronous=NORMAL;')
             self._endpointService = desc.makeService()
             self._endpointService.startService()
 
