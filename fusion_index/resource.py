@@ -4,6 +4,7 @@ from characteristic import attributes
 from service_identity import CertificateError, VerificationError
 from service_identity._common import DNS_ID, verify_service_identity
 from service_identity.pyopenssl import extract_ids
+from toolz.dicttoolz import merge
 from twisted.internet.interfaces import ISSLTransport
 from twisted.web import http
 from txspinneret.interfaces import ISpinneretResource
@@ -135,23 +136,20 @@ class SearchResource(object):
 
     @router.route('/')
     def searchNoType(self, request, params):
-        p = self.params.copy()
-        p['searchType'] = None
-        return SearchResultResource(store=self.store, params=p)
+        return SearchResultResource(
+            store=self.store, params=dict(self.params, searchType=None))
 
 
     @router.route(Text('searchType'), '')
     def searchWithType(self, request, params):
-        p = self.params.copy()
-        p.update(params)
-        return SearchResultResource(store=self.store, params=p)
+        return SearchResultResource(
+            store=self.store, params=merge(self.params, params))
 
 
     @router.route(Text('searchType'), Text('result'))
     def searchEntry(self, request, params):
-        p = self.params.copy()
-        p.update(params)
-        return SearchEntryResource(store=self.store, params=p)
+        return SearchEntryResource(
+            store=self.store, params=merge(self.params, params))
 
 
 
