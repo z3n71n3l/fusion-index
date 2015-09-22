@@ -74,11 +74,7 @@ class SearchEntry(Item):
 
         @see: L{SearchEntry}
         """
-        criteria = [
-            SearchEntry.searchClass == searchClass.value,
-            SearchEntry.environment == environment,
-            SearchEntry.indexType == indexType,
-            ]
+        criteria = []
         if searchClass == SearchClasses.EXACT:
             criteria.append(SearchEntry.searchValue == searchValue)
         elif searchClass == SearchClasses.PREFIX:
@@ -86,6 +82,11 @@ class SearchEntry(Item):
         else:
             raise RuntimeError(
                 'Invalid search class: {!r}'.format(searchClass))
+        criteria.extend([
+            SearchEntry.searchClass == searchClass.value,
+            SearchEntry.environment == environment,
+            SearchEntry.indexType == indexType,
+            ])
         if searchType is not None:
             criteria.append(SearchEntry.searchType == searchType)
         return store.query(SearchEntry, AND(*criteria)).getColumn('result')

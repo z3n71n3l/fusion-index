@@ -99,3 +99,11 @@ class SearchTests(TestCase):
                     searchValue, searchType)),
                 Equals([]))
         s.transact(_tx)
+
+
+    def test_invalidSearchClass(self):
+        """
+        Searching with an invalid search class raises L{RuntimeError}.
+        """
+        self.assertRaises(
+            RuntimeError, SearchEntry.search, Store(), 42, u'', u'', u'')
