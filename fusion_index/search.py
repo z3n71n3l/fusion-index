@@ -42,7 +42,7 @@ class SearchEntry(Item):
     environment = text(doc="""
     The environment in which this entry exists.
 
-    Usually something like C{u'production'}.
+    Usually something like C{u'prod'}.
     """, allowNone=False)
 
     indexType = text(doc="""
