@@ -1,3 +1,5 @@
+import json
+
 from characteristic import attributes
 from service_identity import CertificateError, VerificationError
 from service_identity._common import DNS_ID, verify_service_identity
@@ -6,11 +8,14 @@ from twisted.internet.interfaces import ISSLTransport
 from twisted.web import http
 from txspinneret.interfaces import ISpinneretResource
 from txspinneret.resource import NotFound
-from txspinneret.route import Router, Text
+from txspinneret.route import Router, Text, routedResource
 from zope.interface import implementer
 
-from fusion_index.logging import LOG_LOOKUP_GET, LOG_LOOKUP_PUT
+from fusion_index.logging import (
+    LOG_LOOKUP_GET, LOG_LOOKUP_PUT, LOG_SEARCH_DELETE, LOG_SEARCH_GET,
+    LOG_SEARCH_PUT)
 from fusion_index.lookup import LookupEntry
+from fusion_index.search import SearchClasses, SearchEntry
 
 
 
@@ -66,6 +71,15 @@ class IndexRouter(object):
         return LookupResource(store=self.store, **params)
 
 
+    @router.subroute(
+        'search', Text('searchClass'), Text('environment'), Text('indexType'),
+        Text('searchValue'))
+    def search(self, request, params):
+        params['searchClass'] = SearchClasses.lookupByValue(
+            params['searchClass'])
+        return SearchResource(store=self.store, params=params)
+
+
 
 @implementer(ISpinneretResource)
 @attributes(['store', 'environment', 'indexType', 'key'])
@@ -107,5 +121,69 @@ class LookupResource(object):
                 indexType=self.indexType,
                 key=self.key,
                 value=value)
+            request.setResponseCode(http.NO_CONTENT)
+            return ''
+
+
+
+@routedResource
+@implementer(ISpinneretResource)
+@attributes(['store', 'params'])
+class SearchResource(object):
+    router = Router()
+
+
+    @router.route('/')
+    def searchNoType(self, request, params):
+        p = self.params.copy()
+        p['searchType'] = None
+        return SearchResultResource(store=self.store, params=p)
+
+
+    @router.route(Text('searchType'), '')
+    def searchWithType(self, request, params):
+        p = self.params.copy()
+        p.update(params)
+        return SearchResultResource(store=self.store, params=p)
+
+
+    @router.route(Text('searchType'), Text('result'))
+    def searchEntry(self, request, params):
+        p = self.params.copy()
+        p.update(params)
+        return SearchEntryResource(store=self.store, params=p)
+
+
+
+@implementer(ISpinneretResource)
+@attributes(['store', 'params'])
+class SearchResultResource(object):
+    def render_GET(self, request):
+        with LOG_SEARCH_GET(**self.params) as action:
+            SearchEntry.search(store=self.store, **self.params)
+            results = self.store.transact(
+                lambda: list(
+                    SearchEntry.search(store=self.store, **self.params)))
+            action.add_success_fields(results=results)
+            request.setHeader('Content-Type', 'application/json')
+            return json.dumps(results)
+
+
+
+@implementer(ISpinneretResource)
+@attributes(['store', 'params'])
+class SearchEntryResource(object):
+    def render_PUT(self, request):
+        with LOG_SEARCH_PUT(**self.params):
+            self.store.transact(
+                SearchEntry.insert, store=self.store, **self.params)
+            request.setResponseCode(http.NO_CONTENT)
+            return ''
+
+
+    def render_DELETE(self, request):
+        with LOG_SEARCH_DELETE(**self.params):
+            self.store.transact(
+                SearchEntry.remove, store=self.store, **self.params)
             request.setResponseCode(http.NO_CONTENT)
             return ''
