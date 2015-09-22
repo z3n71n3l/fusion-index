@@ -529,3 +529,13 @@ class SearchAPITests(SynchronousTestCase):
         self.assertEqual(
             json.loads(data(self, response)),
             ['result2'])
+
+
+    def test_invalidSearchClass(self):
+        """
+        Paths with an invalid search class result in a Not Found response.
+        """
+        agent = ResourceTraversalAgent(self._resource())
+        response = GET(
+            self, agent, b'/search/invalid/e/i/value/')
+        self.assertEqual(response.code, http.NOT_FOUND)

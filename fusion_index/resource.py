@@ -76,8 +76,11 @@ class IndexRouter(object):
         'search', Text('searchClass'), Text('environment'), Text('indexType'),
         Text('searchValue'))
     def search(self, request, params):
-        params['searchClass'] = SearchClasses.lookupByValue(
-            params['searchClass'])
+        try:
+            params['searchClass'] = SearchClasses.lookupByValue(
+                params['searchClass'])
+        except ValueError:
+            return NotFound()
         return SearchResource(store=self.store, params=params)
 
 
