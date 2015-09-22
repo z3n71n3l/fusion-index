@@ -22,10 +22,11 @@ class SearchEntry(Item):
     """
     An entry in the search index.
 
-    Each combination of the attributes on this item. The primary querying
-    operation supported is matching on the C{(searchClass, environment,
-    indexType, searchValue)} portion, with exact or prefix matching on the
-    I{searchValue} component depending on the I{searchClass} component.
+    Each combination of the attributes on this item forms a unique entry in the
+    index. The primary querying operation supported is matching on the
+    C{(searchClass, environment, indexType, searchValue)} portion, with exact
+    or prefix matching on the I{searchValue} component depending on the
+    I{searchClass} component.
 
     "Separate" indexes are keyed by C{(searchClass, environment, indexType)}.
     I{environment} and I{indexType} are separated as a convenience to clients
