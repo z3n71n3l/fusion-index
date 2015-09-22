@@ -1,3 +1,4 @@
+import json
 from collections import namedtuple
 from StringIO import StringIO
 
@@ -12,8 +13,11 @@ from twisted.web import http
 from twisted.web.client import FileBodyProducer, readBody
 from zope.interface import implementer
 
-from fusion_index.logging import LOG_LOOKUP_GET, LOG_LOOKUP_PUT
+from fusion_index.logging import (
+    LOG_LOOKUP_GET, LOG_LOOKUP_PUT, LOG_SEARCH_DELETE, LOG_SEARCH_GET,
+    LOG_SEARCH_PUT)
 from fusion_index.resource import IndexRouter, authenticateRequest
+from fusion_index.search import SearchClasses
 from fusion_index.test.util import ResourceTraversalAgent
 
 
@@ -96,35 +100,43 @@ class authenticateRequestTests(TestCase):
 
 
 
+def GET(self, agent, path):
+    """
+    Simulate a GET request.
+    """
+    return self.successResultOf(agent.request(b'GET', path))
+
+
+def PUT(self, agent, path, data):
+    """
+    Simulate a PUT request.
+    """
+    return self.successResultOf(
+        agent.request(
+            b'PUT', path, bodyProducer=FileBodyProducer(StringIO(data))))
+
+
+def DELETE(self, agent, path):
+    """
+    Simulate a DELETE request.
+    """
+    return self.successResultOf(agent.request(b'DELETE', path))
+
+
+def data(self, response):
+    """
+    Get the body from a response.
+    """
+    return self.successResultOf(readBody(response))
+
+
+
 class LookupAPITests(SynchronousTestCase):
     """
     Tests for the Lookup HTTP API.
     """
     def _resource(self):
         return IndexRouter(store=Store()).router.resource()
-
-
-    def get(self, agent, path):
-        """
-        Simulate a GET request.
-        """
-        return self.successResultOf(agent.request(b'GET', path))
-
-
-    def put(self, agent, path, data):
-        """
-        Simulate a PUT request.
-        """
-        return self.successResultOf(
-            agent.request(
-                b'PUT', path, bodyProducer=FileBodyProducer(StringIO(data))))
-
-
-    def data(self, response):
-        """
-        Get the body from a response.
-        """
-        return self.successResultOf(readBody(response))
 
 
     def assertLookupLogging(self, logger):
@@ -138,6 +150,7 @@ class LookupAPITests(SynchronousTestCase):
              'indexType': u'sometype',
              'key': u'somekey'})
         assertContainsFields(self, put.end_message, {'value': b'data'})
+        self.assertTrue(put.succeeded)
 
         [get] = LoggedAction.of_type(logger.messages, LOG_LOOKUP_GET)
         assertContainsFields(
@@ -146,6 +159,7 @@ class LookupAPITests(SynchronousTestCase):
              'indexType': u'sometype',
              'key': u'somekey'})
         assertContainsFields(self, get.end_message, {'value': b'data'})
+        self.assertTrue(get.succeeded)
 
 
     @capture_logging(assertLookupLogging)
@@ -155,13 +169,13 @@ class LookupAPITests(SynchronousTestCase):
         the same value that was originally stored.
         """
         agent = ResourceTraversalAgent(self._resource())
-        response = self.put(
-            agent, b'/lookup/someenv/sometype/somekey', b'data')
+        response = PUT(
+            self, agent, b'/lookup/someenv/sometype/somekey', b'data')
         self.assertEqual(response.code, http.NO_CONTENT)
 
-        response = self.get(agent, b'/lookup/someenv/sometype/somekey')
+        response = GET(self, agent, b'/lookup/someenv/sometype/somekey')
         self.assertEqual(response.code, http.OK)
-        self.assertEqual(self.data(response), b'data')
+        self.assertEqual(data(self, response), b'data')
 
 
     def assertMissingGetLogging(self, logger):
@@ -186,7 +200,7 @@ class LookupAPITests(SynchronousTestCase):
         results in a 404 response.
         """
         agent = ResourceTraversalAgent(self._resource())
-        response = self.get(agent, b'/lookup/someenv/sometype/somekey')
+        response = GET(self, agent, b'/lookup/someenv/sometype/somekey')
         self.assertEqual(response.code, http.NOT_FOUND)
 
 
@@ -195,21 +209,21 @@ class LookupAPITests(SynchronousTestCase):
         Storing a value in the lookup index is idempotent.
         """
         agent = ResourceTraversalAgent(self._resource())
-        response = self.put(
-            agent, b'/lookup/someenv/sometype/somekey', b'data')
+        response = PUT(
+            self, agent, b'/lookup/someenv/sometype/somekey', b'data')
         self.assertEqual(response.code, http.NO_CONTENT)
 
-        response = self.get(agent, b'/lookup/someenv/sometype/somekey')
+        response = GET(self, agent, b'/lookup/someenv/sometype/somekey')
         self.assertEqual(response.code, http.OK)
-        self.assertEqual(self.data(response), b'data')
+        self.assertEqual(data(self, response), b'data')
 
-        response = self.put(
-            agent, b'/lookup/someenv/sometype/somekey', b'data')
+        response = PUT(
+            self, agent, b'/lookup/someenv/sometype/somekey', b'data')
         self.assertEqual(response.code, http.NO_CONTENT)
 
-        response = self.get(agent, b'/lookup/someenv/sometype/somekey')
+        response = GET(self, agent, b'/lookup/someenv/sometype/somekey')
         self.assertEqual(response.code, http.OK)
-        self.assertEqual(self.data(response), b'data')
+        self.assertEqual(data(self, response), b'data')
 
 
     def test_storeOverwrite(self):
@@ -217,21 +231,21 @@ class LookupAPITests(SynchronousTestCase):
         Storing a value in the lookup index overwrites any existing value.
         """
         agent = ResourceTraversalAgent(self._resource())
-        response = self.put(
-            agent, b'/lookup/someenv/sometype/somekey', b'data')
+        response = PUT(
+            self, agent, b'/lookup/someenv/sometype/somekey', b'data')
         self.assertEqual(response.code, http.NO_CONTENT)
 
-        response = self.get(agent, b'/lookup/someenv/sometype/somekey')
+        response = GET(self, agent, b'/lookup/someenv/sometype/somekey')
         self.assertEqual(response.code, http.OK)
-        self.assertEqual(self.data(response), b'data')
+        self.assertEqual(data(self, response), b'data')
 
-        response = self.put(
-            agent, b'/lookup/someenv/sometype/somekey', b'newdata')
+        response = PUT(
+            self, agent, b'/lookup/someenv/sometype/somekey', b'newdata')
         self.assertEqual(response.code, http.NO_CONTENT)
 
-        response = self.get(agent, b'/lookup/someenv/sometype/somekey')
+        response = GET(self, agent, b'/lookup/someenv/sometype/somekey')
         self.assertEqual(response.code, http.OK)
-        self.assertEqual(self.data(response), b'newdata')
+        self.assertEqual(data(self, response), b'newdata')
 
 
     def test_storeMultiple(self):
@@ -240,28 +254,288 @@ class LookupAPITests(SynchronousTestCase):
         """
         agent = ResourceTraversalAgent(self._resource())
 
-        response = self.put(agent, b'/lookup/e1/t1/k1', b'data1')
+        response = PUT(self, agent, b'/lookup/e1/t1/k1', b'data1')
         self.assertEqual(response.code, http.NO_CONTENT)
-        response = self.put(agent, b'/lookup/e2/t2/k2', b'data2')
+        response = PUT(self, agent, b'/lookup/e2/t2/k2', b'data2')
         self.assertEqual(response.code, http.NO_CONTENT)
 
-        response = self.get(agent, b'/lookup/e1/t1/k1')
+        response = GET(self, agent, b'/lookup/e1/t1/k1')
         self.assertEqual(response.code, http.OK)
-        self.assertEqual(self.data(response), b'data1')
+        self.assertEqual(data(self, response), b'data1')
 
-        response = self.get(agent, b'/lookup/e2/t2/k2')
+        response = GET(self, agent, b'/lookup/e2/t2/k2')
         self.assertEqual(response.code, http.OK)
-        self.assertEqual(self.data(response), b'data2')
+        self.assertEqual(data(self, response), b'data2')
 
         self.assertEqual(
-            self.get(agent, b'/lookup/e2/t1/k1').code, http.NOT_FOUND)
+            GET(self, agent, b'/lookup/e2/t1/k1').code, http.NOT_FOUND)
         self.assertEqual(
-            self.get(agent, b'/lookup/e1/t2/k1').code, http.NOT_FOUND)
+            GET(self, agent, b'/lookup/e1/t2/k1').code, http.NOT_FOUND)
         self.assertEqual(
-            self.get(agent, b'/lookup/e1/t1/k2').code, http.NOT_FOUND)
+            GET(self, agent, b'/lookup/e1/t1/k2').code, http.NOT_FOUND)
         self.assertEqual(
-            self.get(agent, b'/lookup/e1/t2/k2').code, http.NOT_FOUND)
+            GET(self, agent, b'/lookup/e1/t2/k2').code, http.NOT_FOUND)
         self.assertEqual(
-            self.get(agent, b'/lookup/e2/t1/k2').code, http.NOT_FOUND)
+            GET(self, agent, b'/lookup/e2/t1/k2').code, http.NOT_FOUND)
         self.assertEqual(
-            self.get(agent, b'/lookup/e2/t2/k1').code, http.NOT_FOUND)
+            GET(self, agent, b'/lookup/e2/t2/k1').code, http.NOT_FOUND)
+
+
+
+class SearchAPITests(SynchronousTestCase):
+    """
+    Tests for the Search HTTP API.
+    """
+    def _resource(self):
+        return IndexRouter(store=Store()).router.resource()
+
+
+    def assertSearchLogging(self, logger):
+        """
+        The put action is logged, followed by the get action, followed by the
+        delete, followed by the second get.
+        """
+        [put] = LoggedAction.of_type(logger.messages, LOG_SEARCH_PUT)
+        assertContainsFields(
+            self, put.start_message,
+            {'searchClass': SearchClasses.EXACT,
+             'environment': u'someenv',
+             'indexType': u'someindex',
+             'searchValue': u'somevalue',
+             'searchType': u'type',
+             'result': u'result'})
+        self.assertTrue(put.succeeded)
+
+        [delete] = LoggedAction.of_type(logger.messages, LOG_SEARCH_DELETE)
+        assertContainsFields(
+            self, delete.start_message,
+            {'searchClass': SearchClasses.EXACT,
+             'environment': u'someenv',
+             'indexType': u'someindex',
+             'searchValue': u'somevalue',
+             'searchType': u'type',
+             'result': u'result'})
+        self.assertTrue(delete.succeeded)
+
+        [get1, get2] = LoggedAction.of_type(logger.messages, LOG_SEARCH_GET)
+        assertContainsFields(
+            self, get1.start_message,
+            {'searchClass': SearchClasses.EXACT,
+             'environment': u'someenv',
+             'indexType': u'someindex',
+             'searchValue': u'somevalue',
+             'searchType': None})
+        assertContainsFields(self, get1.end_message, {'results': [u'result']})
+        self.assertTrue(get1.succeeded)
+        assertContainsFields(
+            self, get2.start_message,
+            {'searchClass': SearchClasses.EXACT,
+             'environment': u'someenv',
+             'indexType': u'someindex',
+             'searchValue': u'somevalue',
+             'searchType': None})
+        assertContainsFields(self, get2.end_message, {'results': []})
+        self.assertTrue(get2.succeeded)
+
+
+    @capture_logging(assertSearchLogging)
+    def test_storeRetrieveDelete(self, logger):
+        """
+        Storing a value in the search index and then retrieving it results in
+        the same value that was originally stored. After deleting it, the entry
+        is no longer returned by a search.
+        """
+        agent = ResourceTraversalAgent(self._resource())
+        response = PUT(
+            self,
+            agent,
+            b'/search/exact/someenv/someindex/somevalue/type/result',
+            b'')
+        self.assertEqual(response.code, http.NO_CONTENT)
+
+        response = GET(
+            self, agent, b'/search/exact/someenv/someindex/somevalue/')
+        self.assertEqual(response.code, http.OK)
+        self.assertEqual(
+            response.headers.getRawHeaders('Content-Type'),
+            ['application/json'])
+        self.assertEqual(
+            json.loads(data(self, response)),
+            [u'result'])
+
+        response = DELETE(
+            self,
+            agent,
+            b'/search/exact/someenv/someindex/somevalue/type/result')
+        self.assertEqual(response.code, http.NO_CONTENT)
+
+        response = GET(
+            self, agent, b'/search/exact/someenv/someindex/somevalue/')
+        self.assertEqual(response.code, http.OK)
+        self.assertEqual(
+            response.headers.getRawHeaders('Content-Type'),
+            ['application/json'])
+        self.assertEqual(
+            json.loads(data(self, response)),
+            [])
+
+
+    def test_storeDeleteMissing(self):
+        """
+        Deleting a value that does not exist in the search index succeeds
+        without doing anything.
+        """
+        agent = ResourceTraversalAgent(self._resource())
+        response = DELETE(
+            self,
+            agent,
+            b'/search/exact/someenv/someindex/somevalue/type/result')
+        self.assertEqual(response.code, http.NO_CONTENT)
+
+
+    def test_storeMultiple(self):
+        """
+        Inserting two entries with the same value but different search types
+        results in both being returned for a search without search type, but
+        only the respective entry for a search with search type.
+        """
+        agent = ResourceTraversalAgent(self._resource())
+        response = PUT(
+            self, agent, b'/search/exact/e/i/value/type1/result1', b'')
+        self.assertEqual(response.code, http.NO_CONTENT)
+        response = PUT(
+            self, agent, b'/search/exact/e/i/value/type2/result2', b'')
+        self.assertEqual(response.code, http.NO_CONTENT)
+
+        response = GET(
+            self, agent, b'/search/exact/e/i/value/')
+        self.assertEqual(response.code, http.OK)
+        self.assertEqual(
+            response.headers.getRawHeaders('Content-Type'),
+            ['application/json'])
+        self.assertEqual(
+            set(json.loads(data(self, response))),
+            {'result1', 'result2'})
+
+        response = GET(
+            self, agent, b'/search/exact/e/i/value/type2/')
+        self.assertEqual(response.code, http.OK)
+        self.assertEqual(
+            response.headers.getRawHeaders('Content-Type'),
+            ['application/json'])
+        self.assertEqual(
+            json.loads(data(self, response)),
+            ['result2'])
+
+
+    def test_insertTwice(self):
+        """
+        Inserting the same entry twice has no effect on the second insert.
+        """
+        agent = ResourceTraversalAgent(self._resource())
+        response = PUT(
+            self, agent, b'/search/exact/e/i/value/type/result', b'')
+        self.assertEqual(response.code, http.NO_CONTENT)
+        response = PUT(
+            self, agent, b'/search/exact/e/i/value/type/result', b'')
+        self.assertEqual(response.code, http.NO_CONTENT)
+
+        response = GET(
+            self, agent, b'/search/exact/e/i/value/')
+        self.assertEqual(response.code, http.OK)
+        self.assertEqual(
+            response.headers.getRawHeaders('Content-Type'),
+            ['application/json'])
+        self.assertEqual(
+            set(json.loads(data(self, response))),
+            {'result'})
+
+
+    def assertSearchLogging2(self, logger):
+        """
+        The two put actions are logged, followed by the two get actions.
+        """
+        [put1, put2] = LoggedAction.of_type(logger.messages, LOG_SEARCH_PUT)
+        assertContainsFields(
+            self, put1.start_message,
+            {'searchClass': SearchClasses.EXACT,
+             'environment': u'e',
+             'indexType': u'i',
+             'searchValue': u'value',
+             'searchType': u'type1',
+             'result': u'result1'})
+        self.assertTrue(put1.succeeded)
+        assertContainsFields(
+            self, put2.start_message,
+            {'searchClass': SearchClasses.PREFIX,
+             'environment': u'e',
+             'indexType': u'i',
+             'searchValue': u'value',
+             'searchType': u'type2',
+             'result': u'result2'})
+        self.assertTrue(put2.succeeded)
+
+        [get1, get2] = LoggedAction.of_type(logger.messages, LOG_SEARCH_GET)
+        assertContainsFields(
+            self, get1.start_message,
+            {'searchClass': SearchClasses.EXACT,
+             'environment': u'e',
+             'indexType': u'i',
+             'searchValue': u'value',
+             'searchType': None})
+        assertContainsFields(self, get1.end_message, {'results': [u'result1']})
+        self.assertTrue(get1.succeeded)
+        assertContainsFields(
+            self, get2.start_message,
+            {'searchClass': SearchClasses.PREFIX,
+             'environment': u'e',
+             'indexType': u'i',
+             'searchValue': u'va',
+             'searchType': None})
+        assertContainsFields(self, get2.end_message, {'results': [u'result2']})
+        self.assertTrue(get2.succeeded)
+
+
+    @capture_logging(assertSearchLogging2)
+    def test_exactAndPrefix(self, logger):
+        """
+        Searching the exact index only finds entries inserted into the exact
+        index, and likewise for the prefix index.
+        """
+        agent = ResourceTraversalAgent(self._resource())
+        response = PUT(
+            self, agent, b'/search/exact/e/i/value/type1/result1', b'')
+        self.assertEqual(response.code, http.NO_CONTENT)
+        response = PUT(
+            self, agent, b'/search/prefix/e/i/value/type2/result2', b'')
+        self.assertEqual(response.code, http.NO_CONTENT)
+
+        response = GET(
+            self, agent, b'/search/exact/e/i/value/')
+        self.assertEqual(response.code, http.OK)
+        self.assertEqual(
+            response.headers.getRawHeaders('Content-Type'),
+            ['application/json'])
+        self.assertEqual(
+            json.loads(data(self, response)),
+            ['result1'])
+
+        response = GET(
+            self, agent, b'/search/prefix/e/i/va/')
+        self.assertEqual(response.code, http.OK)
+        self.assertEqual(
+            response.headers.getRawHeaders('Content-Type'),
+            ['application/json'])
+        self.assertEqual(
+            json.loads(data(self, response)),
+            ['result2'])
+
+
+    def test_invalidSearchClass(self):
+        """
+        Paths with an invalid search class result in a Not Found response.
+        """
+        agent = ResourceTraversalAgent(self._resource())
+        response = GET(
+            self, agent, b'/search/invalid/e/i/value/')
+        self.assertEqual(response.code, http.NOT_FOUND)

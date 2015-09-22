@@ -21,6 +21,7 @@ setup(
         'hypothesis',
         'eliot',
         'fusion_util',
+        'toolz',
         ],
     license='MIT',
     packages=find_packages() + ['axiom.plugins'],

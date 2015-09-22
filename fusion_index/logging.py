@@ -1,6 +1,9 @@
 from eliot import ActionType, Field, fields
 from eliot._validation import ValidationError
 
+from fusion_index.search import SearchClasses
+
+
 
 def _serviceDescriptionAsField(desc):
     """
@@ -25,6 +28,12 @@ _SERVICE_DESCRIPTION = Field(
     u'description',
     _serviceDescriptionAsField,
     u'The service description')
+
+
+_SEARCH_CLASS = Field(
+    u'searchClass',
+    lambda c: c.value,
+    u'The search class')
 
 
 LOG_START_SERVICE = ActionType(
@@ -52,6 +61,35 @@ LOG_LOOKUP_PUT = ActionType(
     u'Storing a value in the lookup index')
 
 
+_SEARCH_TYPE = Field.for_types(
+    'searchType', [unicode, None], u'The search type')
+LOG_SEARCH_GET = ActionType(
+    u'fusion_index:search:get',
+    fields(
+        _SEARCH_CLASS, _SEARCH_TYPE, environment=unicode, indexType=unicode,
+        searchValue=unicode),
+    fields(results=list),
+    u'Searching the search index')
+
+
+LOG_SEARCH_PUT = ActionType(
+    u'fusion_index:search:put',
+    fields(
+        _SEARCH_CLASS, environment=unicode, indexType=unicode,
+        searchValue=unicode, searchType=unicode, result=unicode),
+    [],
+    u'Inserting an entry into the search index')
+
+
+LOG_SEARCH_DELETE = ActionType(
+    u'fusion_index:search:delete',
+    fields(
+        _SEARCH_CLASS, environment=unicode, indexType=unicode,
+        searchValue=unicode, searchType=unicode, result=unicode),
+    [],
+    u'Deleting an entry from the search index')
+
+
 __all__ = [
     'LOG_START_SERVICE', 'LOG_STOP_SERVICE', 'LOG_LOOKUP_GET',
-    'LOG_LOOKUP_PUT']
+    'LOG_LOOKUP_PUT', 'LOG_SEARCH_GET', 'LOG_SEARCH_PUT', 'LOG_SEARCH_DELETE']
