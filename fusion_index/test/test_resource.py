@@ -451,7 +451,53 @@ class SearchAPITests(SynchronousTestCase):
             {'result'})
 
 
-    def test_exactAndPrefix(self):
+    def assertSearchLogging2(self, logger):
+        """
+        The two put actions are logged, followed by the two get actions.
+        """
+        [put1, put2] = LoggedAction.of_type(logger.messages, LOG_SEARCH_PUT)
+        assertContainsFields(
+            self, put1.start_message,
+            {'searchClass': SearchClasses.EXACT,
+             'environment': u'e',
+             'indexType': u'i',
+             'searchValue': u'value',
+             'searchType': u'type1',
+             'result': u'result1'})
+        self.assertTrue(put1.succeeded)
+        assertContainsFields(
+            self, put2.start_message,
+            {'searchClass': SearchClasses.PREFIX,
+             'environment': u'e',
+             'indexType': u'i',
+             'searchValue': u'value',
+             'searchType': u'type2',
+             'result': u'result2'})
+        self.assertTrue(put2.succeeded)
+
+        [get1, get2] = LoggedAction.of_type(logger.messages, LOG_SEARCH_GET)
+        assertContainsFields(
+            self, get1.start_message,
+            {'searchClass': SearchClasses.EXACT,
+             'environment': u'e',
+             'indexType': u'i',
+             'searchValue': u'value',
+             'searchType': None})
+        assertContainsFields(self, get1.end_message, {'results': [u'result1']})
+        self.assertTrue(get1.succeeded)
+        assertContainsFields(
+            self, get2.start_message,
+            {'searchClass': SearchClasses.PREFIX,
+             'environment': u'e',
+             'indexType': u'i',
+             'searchValue': u'va',
+             'searchType': None})
+        assertContainsFields(self, get2.end_message, {'results': [u'result2']})
+        self.assertTrue(get2.succeeded)
+
+
+    @capture_logging(assertSearchLogging2)
+    def test_exactAndPrefix(self, logger):
         """
         Searching the exact index only finds entries inserted into the exact
         index, and likewise for the prefix index.
