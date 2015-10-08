@@ -22,6 +22,7 @@ setup(
         'eliot',
         'fusion_util',
         'toolz',
+        'py2casefold',
         ],
     license='MIT',
     packages=find_packages() + ['axiom.plugins'],

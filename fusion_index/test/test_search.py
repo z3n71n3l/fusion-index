@@ -1,8 +1,9 @@
 from axiom.store import Store
 from hypothesis import given
 from hypothesis.strategies import text
+from py2casefold import casefold
 from testtools import TestCase
-from testtools.matchers import Equals
+from testtools.matchers import Annotate, Equals
 
 from fusion_index.search import SearchClasses, SearchEntry
 
@@ -10,6 +11,14 @@ from fusion_index.search import SearchClasses, SearchEntry
 
 def axiom_text():
     return text().map(lambda s: u''.join(c for c in s if c != u'\x00'))
+
+
+def spaced(text):
+    return u' \t'.join(text)
+
+
+def punctuated(text):
+    return u'.:\''.join(text)
 
 
 class SearchTests(TestCase):
@@ -107,3 +116,23 @@ class SearchTests(TestCase):
         """
         self.assertRaises(
             RuntimeError, SearchEntry.search, Store(), 42, u'', u'', u'')
+
+
+    @given(axiom_text())
+    def test_normalization(self, value):
+        """
+        Inserting a value and then searching with a search equal to that value
+        over normalization returns the inserted entry.
+        """
+        s = Store()
+        def _tx():
+            SearchEntry.insert(
+                s, SearchClasses.EXACT, u'e', u'i', value, u'type', u'RESULT')
+            for mutation in [casefold, spaced, punctuated]:
+                self.assertThat(
+                    list(SearchEntry.search(
+                        s, SearchClasses.EXACT, u'e', u'i', mutation(value))),
+                    Annotate(
+                        'Not found for {!r}({!r})'.format(mutation, value),
+                        Equals([u'RESULT'])))
+        s.transact(_tx)
