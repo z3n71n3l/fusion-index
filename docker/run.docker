@@ -1,0 +1,10 @@
+FROM fusionapp/fusion-index-base
+
+COPY wheelhouse /wheelhouse
+RUN /appenv/bin/pip install --no-index -f /wheelhouse fusion-index
+RUN /appenv/bin/trial --temp-directory=/tmp/_trial_temp --reporter=text fusion_index \
+  && rm -rf /tmp/_trial_temp
+
+EXPOSE 8443
+WORKDIR "/db"
+ENTRYPOINT ["/appenv/bin/axiomatic", "-d", "/db/fusion-index.axiom"]

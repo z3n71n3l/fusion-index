@@ -2,3 +2,4 @@
 .coverage
 .tox
 _trial_temp
+wheelhouse
