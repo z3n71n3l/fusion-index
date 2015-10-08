@@ -2,7 +2,7 @@ from axiom.store import Store
 from hypothesis import given
 from hypothesis.strategies import lists, sampled_from, text
 from testtools import TestCase
-from testtools.matchers import Equals
+from testtools.matchers import Annotate, Equals
 
 from fusion_index.search import SearchClasses, SearchEntry
 
@@ -148,5 +148,7 @@ class SearchTests(TestCase):
                 self.assertThat(
                     list(SearchEntry.search(
                         s, SearchClasses.EXACT, u'e', u'i', mutation(value))),
-                    Equals([u'RESULT']))
+                    Annotate(
+                        'Not found for {!r}({!r})'.format(mutation, value),
+                        Equals([u'RESULT'])))
         s.transact(_tx)

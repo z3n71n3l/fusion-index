@@ -7,6 +7,7 @@ this implementation has both exact matching and prefix matching (in different
 indexes).
 """
 from re import UNICODE, compile
+from unicodedata import normalize
 
 from axiom.attributes import AND, compoundIndex, text
 from axiom.item import Item
@@ -82,7 +83,7 @@ class SearchEntry(Item):
         @rtype: L{unicode}
         @return: The normalized value.
         """
-        return cls._searchNoise.sub(u'', value.lower())
+        return cls._searchNoise.sub(u'', normalize('NFC', value).upper())
 
 
     @classmethod
@@ -135,6 +136,7 @@ class SearchEntry(Item):
 
         @see: L{SearchEntry}
         """
+        searchValue = cls._normalize(searchValue)
         store.query(
             SearchEntry,
             AND(SearchEntry.searchClass == searchClass.value,
