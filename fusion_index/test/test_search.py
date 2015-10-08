@@ -1,6 +1,7 @@
 from axiom.store import Store
 from hypothesis import given
-from hypothesis.strategies import lists, sampled_from, text
+from hypothesis.strategies import text
+from py2casefold import casefold
 from testtools import TestCase
 from testtools.matchers import Annotate, Equals
 
@@ -12,29 +13,12 @@ def axiom_text():
     return text().map(lambda s: u''.join(c for c in s if c != u'\x00'))
 
 
-def upper(text):
-    return text.upper()
-
-
-def lower(text):
-    return text.lower()
-
-
-def mixCase(text):
-    return u''.join([c.upper(), c.lower()][n % 2] for n, c in enumerate(text))
-
-
 def spaced(text):
     return u' \t'.join(text)
 
 
 def punctuated(text):
-    return u'.:_'.join(text)
-
-
-def mutated(value):
-    return lists(sampled_from([upper, lower, mixCase])).map(
-        lambda mutations: reduce(lambda v, f: f(v), mutations, value))
+    return u'.:\''.join(text)
 
 
 class SearchTests(TestCase):
@@ -144,7 +128,7 @@ class SearchTests(TestCase):
         def _tx():
             SearchEntry.insert(
                 s, SearchClasses.EXACT, u'e', u'i', value, u'type', u'RESULT')
-            for mutation in [upper, lower, mixCase, spaced, punctuated]:
+            for mutation in [casefold, spaced, punctuated]:
                 self.assertThat(
                     list(SearchEntry.search(
                         s, SearchClasses.EXACT, u'e', u'i', mutation(value))),

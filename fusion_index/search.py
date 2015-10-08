@@ -7,6 +7,7 @@ this implementation has both exact matching and prefix matching (in different
 indexes).
 """
 from re import UNICODE, compile
+from py2casefold import casefold
 from unicodedata import normalize
 
 from axiom.attributes import AND, compoundIndex, text
@@ -70,7 +71,7 @@ class SearchEntry(Item):
         searchClass, environment, indexType, searchValue, searchType, result)
 
 
-    _searchNoise = compile(u'[^a-zA-Z0-9,]', UNICODE)
+    _searchNoise = compile(u'[^\w,]', UNICODE)
 
     @classmethod
     def _normalize(cls, value):
@@ -83,7 +84,7 @@ class SearchEntry(Item):
         @rtype: L{unicode}
         @return: The normalized value.
         """
-        return cls._searchNoise.sub(u'', normalize('NFC', value).upper())
+        return cls._searchNoise.sub(u'', casefold(normalize('NFC', value)))
 
 
     @classmethod
