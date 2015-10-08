@@ -6,6 +6,8 @@ being 1:1; a particular search key can map to multiple values. In addition,
 this implementation has both exact matching and prefix matching (in different
 indexes).
 """
+from re import UNICODE, compile
+
 from axiom.attributes import AND, compoundIndex, text
 from axiom.item import Item
 from twisted.python.constants import ValueConstant, Values
@@ -67,6 +69,22 @@ class SearchEntry(Item):
         searchClass, environment, indexType, searchValue, searchType, result)
 
 
+    _searchNoise = compile(u'[^a-zA-Z0-9,]', UNICODE)
+
+    @classmethod
+    def _normalize(cls, value):
+        """
+        Normalize a search value.
+
+        @type value: L{unicode}
+        @param value: The value to normalize.
+
+        @rtype: L{unicode}
+        @return: The normalized value.
+        """
+        return cls._searchNoise.sub(u'', value.lower())
+
+
     @classmethod
     def search(cls, store, searchClass, environment, indexType, searchValue,
                searchType=None):
@@ -76,6 +94,7 @@ class SearchEntry(Item):
         @see: L{SearchEntry}
         """
         criteria = []
+        searchValue = cls._normalize(searchValue)
         if searchClass == SearchClasses.EXACT:
             criteria.append(SearchEntry.searchValue == searchValue)
         elif searchClass == SearchClasses.PREFIX:
@@ -101,6 +120,7 @@ class SearchEntry(Item):
 
         @see: L{SearchEntry}
         """
+        searchValue = cls._normalize(searchValue)
         store.findOrCreate(
             SearchEntry, searchClass=searchClass.value,
             environment=environment, indexType=indexType,
