@@ -136,3 +136,18 @@ class SearchTests(TestCase):
                         'Not found for {!r}({!r})'.format(mutation, value),
                         Equals([u'RESULT'])))
         s.transact(_tx)
+
+
+    def test_insertEmpty(self):
+        """
+        Inserting a value that is empty after normalizaiton instead deletes
+        the entry.
+        """
+        s = Store()
+        def _tx():
+            SearchEntry.insert(
+                s, SearchClasses.EXACT, u'e', u'i', u'RESULT', u'type', u'yo')
+            SearchEntry.insert(
+                s, SearchClasses.EXACT, u'e', u'i', u'RESULT', u'type', u'. /')
+            self.assertThat(s.query(SearchEntry).count(), Equals(0))
+        s.transact(_tx)
