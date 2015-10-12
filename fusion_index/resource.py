@@ -161,7 +161,6 @@ class SearchResource(object):
 class SearchResultResource(object):
     def render_GET(self, request):
         with LOG_SEARCH_GET(**self.params) as action:
-            SearchEntry.search(store=self.store, **self.params)
             results = self.store.transact(
                 lambda: list(
                     SearchEntry.search(store=self.store, **self.params)))
