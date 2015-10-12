@@ -67,14 +67,13 @@ class IndexRouter(object):
     router = Router()
 
     @router.route(
-        'lookup', Text('environment'), Text('indexType'), Text('key'))
+        b'lookup', Text('environment'), Text('indexType'), Text('key'))
     def lookup(self, request, params):
         return LookupResource(store=self.store, **params)
 
 
     @router.subroute(
-        'search', Text('searchClass'), Text('environment'), Text('indexType'),
-        Text('searchValue'))
+        b'search', Text('searchClass'), Text('environment'), Text('indexType'))
     def search(self, request, params):
         try:
             params['searchClass'] = SearchClasses.lookupByValue(
@@ -137,19 +136,20 @@ class SearchResource(object):
     router = Router()
 
 
-    @router.route('/')
+    @router.route(b'results', Text('searchValue'))
     def searchNoType(self, request, params):
         return SearchResultResource(
-            store=self.store, params=dict(self.params, searchType=None))
+            store=self.store,
+            params=merge(self.params, params, {'searchType': None}))
 
 
-    @router.route(Text('searchType'), '')
+    @router.route(b'results', Text('searchValue'), Text('searchType'))
     def searchWithType(self, request, params):
         return SearchResultResource(
             store=self.store, params=merge(self.params, params))
 
 
-    @router.route(Text('searchType'), Text('result'))
+    @router.route(b'entries', Text('result'), Text('searchType'))
     def searchEntry(self, request, params):
         return SearchEntryResource(
             store=self.store, params=merge(self.params, params))
@@ -174,9 +174,12 @@ class SearchResultResource(object):
 @attributes(['store', 'params'])
 class SearchEntryResource(object):
     def render_PUT(self, request):
-        with LOG_SEARCH_PUT(**self.params):
+        with LOG_SEARCH_PUT(**self.params) as action:
+            searchValue = request.content.read().decode('utf-8')
+            action.add_success_fields(searchValue=searchValue)
             self.store.transact(
-                SearchEntry.insert, store=self.store, **self.params)
+                SearchEntry.insert, store=self.store, searchValue=searchValue,
+                **self.params)
             request.setResponseCode(http.NO_CONTENT)
             return ''
 

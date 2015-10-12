@@ -32,8 +32,8 @@ class SearchTests(TestCase):
         s = Store()
         def _tx():
             SearchEntry.insert(
-                s, SearchClasses.EXACT, environment, indexType, searchValue,
-                searchType, result)
+                s, SearchClasses.EXACT, environment, indexType, result,
+                searchType, searchValue)
             self.assertThat(
                 list(SearchEntry.search(
                     s, SearchClasses.EXACT, environment, indexType,
@@ -46,8 +46,8 @@ class SearchTests(TestCase):
                 Equals([result]))
 
             SearchEntry.remove(
-                s, SearchClasses.EXACT, environment, indexType, searchValue,
-                searchType, result)
+                s, SearchClasses.EXACT, environment, indexType, result,
+                searchType)
             self.assertThat(
                 list(SearchEntry.search(
                     s, SearchClasses.EXACT, environment, indexType,
@@ -71,8 +71,8 @@ class SearchTests(TestCase):
         s = Store()
         def _tx():
             SearchEntry.insert(
-                s, SearchClasses.PREFIX, environment, indexType, searchValue,
-                searchType, result)
+                s, SearchClasses.PREFIX, environment, indexType, result,
+                searchType, searchValue)
             self.assertThat(
                 list(SearchEntry.search(
                     s, SearchClasses.PREFIX, environment, indexType,
@@ -95,8 +95,8 @@ class SearchTests(TestCase):
                 Equals([result]))
 
             SearchEntry.remove(
-                s, SearchClasses.PREFIX, environment, indexType, searchValue,
-                searchType, result)
+                s, SearchClasses.PREFIX, environment, indexType, result,
+                searchType)
             self.assertThat(
                 list(SearchEntry.search(
                     s, SearchClasses.PREFIX, environment, indexType,
@@ -127,7 +127,7 @@ class SearchTests(TestCase):
         s = Store()
         def _tx():
             SearchEntry.insert(
-                s, SearchClasses.EXACT, u'e', u'i', value, u'type', u'RESULT')
+                s, SearchClasses.EXACT, u'e', u'i', u'RESULT', u'type', value)
             for mutation in [casefold, spaced, punctuated]:
                 self.assertThat(
                     list(SearchEntry.search(

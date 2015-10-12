@@ -69,6 +69,8 @@ class SearchEntry(Item):
 
     compoundIndex(
         searchClass, environment, indexType, searchValue, searchType, result)
+    compoundIndex(
+        searchClass, environment, indexType, result, searchType)
 
 
     _searchNoise = compile(u'[^\w,]', UNICODE)
@@ -115,34 +117,50 @@ class SearchEntry(Item):
 
 
     @classmethod
-    def insert(cls, store, searchClass, environment, indexType, searchValue,
-               searchType, result):
+    def insert(cls, store, searchClass, environment, indexType, result,
+               searchType, searchValue):
         """
         Insert an entry into the search index.
 
         @see: L{SearchEntry}
         """
         searchValue = cls._normalize(searchValue)
-        store.findOrCreate(
-            SearchEntry, searchClass=searchClass.value,
-            environment=environment, indexType=indexType,
-            searchValue=searchValue, searchType=searchType, result=result)
+        entry = store.findUnique(
+            SearchEntry,
+            AND(SearchEntry.searchClass == searchClass.value,
+                SearchEntry.environment == environment,
+                SearchEntry.indexType == indexType,
+                SearchEntry.result == result,
+                SearchEntry.searchType == searchType),
+            None)
+        if entry is None:
+            SearchEntry(
+                store=store,
+                searchClass=searchClass.value,
+                environment=environment,
+                indexType=indexType,
+                result=result,
+                searchType=searchType,
+                searchValue=searchValue)
+        else:
+            if searchValue == u'':
+                entry.deleteFromStore()
+            else:
+                entry.searchValue = searchValue
 
 
     @classmethod
-    def remove(cls, store, searchClass, environment, indexType, searchValue,
-               searchType, result):
+    def remove(cls, store, searchClass, environment, indexType, result,
+               searchType):
         """
         Remove an entry from the search index.
 
         @see: L{SearchEntry}
         """
-        searchValue = cls._normalize(searchValue)
         store.query(
             SearchEntry,
             AND(SearchEntry.searchClass == searchClass.value,
                 SearchEntry.environment == environment,
                 SearchEntry.indexType == indexType,
-                SearchEntry.searchValue == searchValue,
-                SearchEntry.searchType == searchType,
-                SearchEntry.result == result)).deleteFromStore()
+                SearchEntry.result == result,
+                SearchEntry.searchType == searchType)).deleteFromStore()
