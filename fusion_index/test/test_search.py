@@ -1,5 +1,5 @@
 from axiom.store import Store
-from hypothesis import given
+from hypothesis import assume, given
 from hypothesis.strategies import text
 from py2casefold import casefold
 from testtools import TestCase
@@ -29,6 +29,7 @@ class SearchTests(TestCase):
         """
         Test inserting, searching, and removing for the exact search class.
         """
+        assume(SearchEntry._normalize(searchValue) != u'')
         s = Store()
         def _tx():
             SearchEntry.insert(
@@ -68,6 +69,7 @@ class SearchTests(TestCase):
         """
         Test inserting, searching, and removing for the prefix search class.
         """
+        assume(SearchEntry._normalize(searchValue) != u'')
         s = Store()
         def _tx():
             SearchEntry.insert(
@@ -118,12 +120,13 @@ class SearchTests(TestCase):
             RuntimeError, SearchEntry.search, Store(), 42, u'', u'', u'')
 
 
-    @given(axiom_text())
+    @given(axiom_text().map(SearchEntry._normalize))
     def test_normalization(self, value):
         """
         Inserting a value and then searching with a search equal to that value
         over normalization returns the inserted entry.
         """
+        assume(value != u'')
         s = Store()
         def _tx():
             SearchEntry.insert(
@@ -133,7 +136,8 @@ class SearchTests(TestCase):
                     list(SearchEntry.search(
                         s, SearchClasses.EXACT, u'e', u'i', mutation(value))),
                     Annotate(
-                        'Not found for {!r}({!r})'.format(mutation, value),
+                        'Not found for {!r}({!r}) == {!r}'.format(
+                            mutation, value, mutation(value)),
                         Equals([u'RESULT'])))
         s.transact(_tx)
 
@@ -146,7 +150,11 @@ class SearchTests(TestCase):
         s = Store()
         def _tx():
             SearchEntry.insert(
+                s, SearchClasses.EXACT, u'e', u'i', u'RESULT', u'type', u'. /')
+            self.assertThat(s.query(SearchEntry).count(), Equals(0))
+            SearchEntry.insert(
                 s, SearchClasses.EXACT, u'e', u'i', u'RESULT', u'type', u'yo')
+            self.assertThat(s.query(SearchEntry).count(), Equals(1))
             SearchEntry.insert(
                 s, SearchClasses.EXACT, u'e', u'i', u'RESULT', u'type', u'. /')
             self.assertThat(s.query(SearchEntry).count(), Equals(0))

@@ -134,14 +134,15 @@ class SearchEntry(Item):
                 SearchEntry.searchType == searchType),
             None)
         if entry is None:
-            SearchEntry(
-                store=store,
-                searchClass=searchClass.value,
-                environment=environment,
-                indexType=indexType,
-                result=result,
-                searchType=searchType,
-                searchValue=searchValue)
+            if searchValue != u'':
+                SearchEntry(
+                    store=store,
+                    searchClass=searchClass.value,
+                    environment=environment,
+                    indexType=indexType,
+                    result=result,
+                    searchType=searchType,
+                    searchValue=searchValue)
         else:
             if searchValue == u'':
                 entry.deleteFromStore()
