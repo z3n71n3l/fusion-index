@@ -144,7 +144,7 @@ class SearchTests(TestCase):
 
     def test_insertEmpty(self):
         """
-        Inserting a value that is empty after normalizaiton instead deletes
+        Inserting a value that is empty after normalization instead deletes
         the entry.
         """
         s = Store()
