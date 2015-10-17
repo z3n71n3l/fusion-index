@@ -301,9 +301,11 @@ class SearchAPITests(SynchronousTestCase):
             {'searchClass': SearchClasses.EXACT,
              'environment': u'someenv',
              'indexType': u'someindex',
-             'searchValue': u'somevalue',
-             'searchType': u'type',
-             'result': u'result'})
+             'result': u'result',
+             'searchType': u'type'})
+        assertContainsFields(
+            self, put.end_message,
+            {'searchValue': u'somevalue'})
         self.assertTrue(put.succeeded)
 
         [delete] = LoggedAction.of_type(logger.messages, LOG_SEARCH_DELETE)
@@ -312,9 +314,8 @@ class SearchAPITests(SynchronousTestCase):
             {'searchClass': SearchClasses.EXACT,
              'environment': u'someenv',
              'indexType': u'someindex',
-             'searchValue': u'somevalue',
-             'searchType': u'type',
-             'result': u'result'})
+             'result': u'result',
+             'searchType': u'type'})
         self.assertTrue(delete.succeeded)
 
         [get1, get2] = LoggedAction.of_type(logger.messages, LOG_SEARCH_GET)
@@ -349,12 +350,12 @@ class SearchAPITests(SynchronousTestCase):
         response = PUT(
             self,
             agent,
-            b'/search/exact/someenv/someindex/somevalue/type/result',
-            b'')
+            b'/search/exact/someenv/someindex/entries/result/type',
+            b'somevalue')
         self.assertEqual(response.code, http.NO_CONTENT)
 
         response = GET(
-            self, agent, b'/search/exact/someenv/someindex/somevalue/')
+            self, agent, b'/search/exact/someenv/someindex/results/somevalue')
         self.assertEqual(response.code, http.OK)
         self.assertEqual(
             response.headers.getRawHeaders('Content-Type'),
@@ -366,11 +367,11 @@ class SearchAPITests(SynchronousTestCase):
         response = DELETE(
             self,
             agent,
-            b'/search/exact/someenv/someindex/somevalue/type/result')
+            b'/search/exact/someenv/someindex/entries/result/type')
         self.assertEqual(response.code, http.NO_CONTENT)
 
         response = GET(
-            self, agent, b'/search/exact/someenv/someindex/somevalue/')
+            self, agent, b'/search/exact/someenv/someindex/results/somevalue')
         self.assertEqual(response.code, http.OK)
         self.assertEqual(
             response.headers.getRawHeaders('Content-Type'),
@@ -389,7 +390,7 @@ class SearchAPITests(SynchronousTestCase):
         response = DELETE(
             self,
             agent,
-            b'/search/exact/someenv/someindex/somevalue/type/result')
+            b'/search/exact/someenv/someindex/entries/result/type')
         self.assertEqual(response.code, http.NO_CONTENT)
 
 
@@ -401,14 +402,14 @@ class SearchAPITests(SynchronousTestCase):
         """
         agent = ResourceTraversalAgent(self._resource())
         response = PUT(
-            self, agent, b'/search/exact/e/i/value/type1/result1', b'')
+            self, agent, b'/search/exact/e/i/entries/result1/type1', b'value')
         self.assertEqual(response.code, http.NO_CONTENT)
         response = PUT(
-            self, agent, b'/search/exact/e/i/value/type2/result2', b'')
+            self, agent, b'/search/exact/e/i/entries/result2/type2', b'value')
         self.assertEqual(response.code, http.NO_CONTENT)
 
         response = GET(
-            self, agent, b'/search/exact/e/i/value/')
+            self, agent, b'/search/exact/e/i/results/value')
         self.assertEqual(response.code, http.OK)
         self.assertEqual(
             response.headers.getRawHeaders('Content-Type'),
@@ -418,7 +419,7 @@ class SearchAPITests(SynchronousTestCase):
             {'result1', 'result2'})
 
         response = GET(
-            self, agent, b'/search/exact/e/i/value/type2/')
+            self, agent, b'/search/exact/e/i/results/value/type2')
         self.assertEqual(response.code, http.OK)
         self.assertEqual(
             response.headers.getRawHeaders('Content-Type'),
@@ -434,14 +435,14 @@ class SearchAPITests(SynchronousTestCase):
         """
         agent = ResourceTraversalAgent(self._resource())
         response = PUT(
-            self, agent, b'/search/exact/e/i/value/type/result', b'')
+            self, agent, b'/search/exact/e/i/entries/result/type', b'value')
         self.assertEqual(response.code, http.NO_CONTENT)
         response = PUT(
-            self, agent, b'/search/exact/e/i/value/type/result', b'')
+            self, agent, b'/search/exact/e/i/entries/result/type', b'value')
         self.assertEqual(response.code, http.NO_CONTENT)
 
         response = GET(
-            self, agent, b'/search/exact/e/i/value/')
+            self, agent, b'/search/exact/e/i/results/value')
         self.assertEqual(response.code, http.OK)
         self.assertEqual(
             response.headers.getRawHeaders('Content-Type'),
@@ -461,18 +462,22 @@ class SearchAPITests(SynchronousTestCase):
             {'searchClass': SearchClasses.EXACT,
              'environment': u'e',
              'indexType': u'i',
-             'searchValue': u'value',
              'searchType': u'type1',
              'result': u'result1'})
+        assertContainsFields(
+            self, put1.end_message,
+            {'searchValue': u'value'})
         self.assertTrue(put1.succeeded)
         assertContainsFields(
             self, put2.start_message,
             {'searchClass': SearchClasses.PREFIX,
              'environment': u'e',
              'indexType': u'i',
-             'searchValue': u'value',
              'searchType': u'type2',
              'result': u'result2'})
+        assertContainsFields(
+            self, put2.end_message,
+            {'searchValue': u'value'})
         self.assertTrue(put2.succeeded)
 
         [get1, get2] = LoggedAction.of_type(logger.messages, LOG_SEARCH_GET)
@@ -504,14 +509,14 @@ class SearchAPITests(SynchronousTestCase):
         """
         agent = ResourceTraversalAgent(self._resource())
         response = PUT(
-            self, agent, b'/search/exact/e/i/value/type1/result1', b'')
+            self, agent, b'/search/exact/e/i/entries/result1/type1', b'value')
         self.assertEqual(response.code, http.NO_CONTENT)
         response = PUT(
-            self, agent, b'/search/prefix/e/i/value/type2/result2', b'')
+            self, agent, b'/search/prefix/e/i/entries/result2/type2', b'value')
         self.assertEqual(response.code, http.NO_CONTENT)
 
         response = GET(
-            self, agent, b'/search/exact/e/i/value/')
+            self, agent, b'/search/exact/e/i/results/value')
         self.assertEqual(response.code, http.OK)
         self.assertEqual(
             response.headers.getRawHeaders('Content-Type'),
@@ -521,7 +526,7 @@ class SearchAPITests(SynchronousTestCase):
             ['result1'])
 
         response = GET(
-            self, agent, b'/search/prefix/e/i/va/')
+            self, agent, b'/search/prefix/e/i/results/va')
         self.assertEqual(response.code, http.OK)
         self.assertEqual(
             response.headers.getRawHeaders('Content-Type'),

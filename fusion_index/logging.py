@@ -1,8 +1,6 @@
 from eliot import ActionType, Field, fields
 from eliot._validation import ValidationError
 
-from fusion_index.search import SearchClasses
-
 
 
 def _serviceDescriptionAsField(desc):
@@ -76,8 +74,8 @@ LOG_SEARCH_PUT = ActionType(
     u'fusion_index:search:put',
     fields(
         _SEARCH_CLASS, environment=unicode, indexType=unicode,
-        searchValue=unicode, searchType=unicode, result=unicode),
-    [],
+        result=unicode, searchType=unicode),
+    fields(searchValue=unicode),
     u'Inserting an entry into the search index')
 
 
@@ -85,7 +83,7 @@ LOG_SEARCH_DELETE = ActionType(
     u'fusion_index:search:delete',
     fields(
         _SEARCH_CLASS, environment=unicode, indexType=unicode,
-        searchValue=unicode, searchType=unicode, result=unicode),
+        result=unicode, searchType=unicode),
     [],
     u'Deleting an entry from the search index')
 
