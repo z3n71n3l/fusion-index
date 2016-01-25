@@ -1,7 +1,8 @@
-FROM fusionapp/fusion-index-base
+FROM fusionapp/base
 
 COPY wheelhouse /wheelhouse
-RUN /appenv/bin/pip install --no-index -f /wheelhouse fusion-index
+COPY requirements.txt /application/requirements.txt
+RUN /appenv/bin/pip install --no-cache-dir --no-index -f /wheelhouse -r /application/requirements.txt fusion-index
 RUN /appenv/bin/trial --temp-directory=/tmp/_trial_temp --reporter=text fusion_index \
   && rm -rf /tmp/_trial_temp
 
