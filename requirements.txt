@@ -5,7 +5,7 @@
 #    pip-compile requirements.in
 #
 argparse==1.4.0           # via unittest2
-Axiom==0.7.4
+Axiom==0.7.5
 characteristic==14.3.0    # via service-identity
 cryptography==1.2.2       # via pyopenssl
 eliot==0.11.0
@@ -22,11 +22,11 @@ py2casefold==0.2.1
 pyasn1-modules==0.0.8     # via service-identity
 pyasn1==0.1.9             # via cryptography, pyasn1-modules, service-identity
 pyopenssl==0.15.1         # via epsilon, service-identity, twisted
-pyrsistent==0.11.11       # via eliot, testtools
-python-mimeparse==1.5   # via testtools
+pyrsistent==0.11.12       # via eliot, testtools
+python-mimeparse==1.5.1   # via testtools
 service-identity==14.0.0  # via twisted
 six==1.10.0               # via cryptography, eliot, pyopenssl, pyrsistent, unittest2
-testtools==1.9.0
+testtools==2.0.0
 toolz==0.7.4
 traceback2==1.4.0         # via testtools, unittest2
 Twisted[tls]==15.5.0
