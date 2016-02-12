@@ -8,12 +8,8 @@ branches:
   - master
 matrix:
   include:
-    # These Python versions don't really control anything since we're using
-    # tox, but doing this makes the UI output more useful.
-    - python: 2.7
-      env: TOXENV=py27
-    - python: pypy
-      env: TOXENV=pypy
+    - env: TOXENV=py27
+    - env: TOXENV=pypy
 install:
 - |
   if [ "${TRAVIS_PYTHON_VERSION}" == "pypy" ]; then
