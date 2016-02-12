@@ -1,6 +1,6 @@
 from axiom.store import Store
 from hypothesis import given
-from hypothesis.strategies import binary, lists, text, tuples
+from hypothesis.strategies import binary, lists, text, tuples, characters
 from testtools import TestCase
 from testtools.matchers import Equals
 
@@ -8,7 +8,11 @@ from fusion_index.lookup import LookupEntry
 
 
 def axiom_text():
-    return text().map(lambda s: u''.join(c for c in s if c != u'\x00'))
+    return text(
+        alphabet=characters(
+            blacklist_categories={'Cs'},
+            blacklist_characters={u'\x00'}),
+        average_size=5)
 
 
 class LookupTests(TestCase):

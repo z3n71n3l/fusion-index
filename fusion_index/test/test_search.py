@@ -1,16 +1,12 @@
 from axiom.store import Store
 from hypothesis import assume, given
-from hypothesis.strategies import text
 from py2casefold import casefold
 from testtools import TestCase
 from testtools.matchers import Annotate, Equals
 
 from fusion_index.search import SearchClasses, SearchEntry
+from fusion_index.test.test_lookup import axiom_text
 
-
-
-def axiom_text():
-    return text().map(lambda s: u''.join(c for c in s if c != u'\x00'))
 
 
 def spaced(text):
