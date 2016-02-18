@@ -13,7 +13,7 @@ enum34==1.1.2             # via cryptography
 Epsilon==0.7.1
 extras==0.0.3             # via testtools
 fusion-util==1.0.0
-hypothesis==3.0.0
+hypothesis==3.0.1
 idna==2.0                 # via cryptography, twisted
 ipaddress==1.0.16         # via cryptography
 linecache2==1.0.0         # via traceback2
@@ -24,7 +24,7 @@ pyasn1==0.1.9             # via cryptography, pyasn1-modules, service-identity
 pyopenssl==0.15.1         # via epsilon, service-identity, twisted
 pyrsistent==0.11.12       # via eliot, testtools
 python-mimeparse==1.5.1   # via testtools
-service-identity==14.0.0  # via twisted
+service-identity==16.0.0  # via twisted
 six==1.10.0               # via cryptography, eliot, pyopenssl, pyrsistent, unittest2
 testtools==2.0.0
 toolz==0.7.4
