@@ -13,7 +13,7 @@ enum34==1.1.2             # via cryptography
 Epsilon==0.7.1
 extras==0.0.3             # via testtools
 fusion-util==1.0.0
-hypothesis==3.0.4
+hypothesis==3.0.5
 idna==2.0                 # via cryptography, twisted
 ipaddress==1.0.16         # via cryptography
 linecache2==1.0.0         # via traceback2
