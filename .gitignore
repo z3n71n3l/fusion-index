@@ -1,5 +1,7 @@
-.hypothesis
+*.egg-info/
 .coverage
+.hypothesis
 .tox
 _trial_temp
+dropin.cache
 wheelhouse
