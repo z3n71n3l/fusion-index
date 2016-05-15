@@ -2,7 +2,7 @@ import re
 from setuptools import setup, find_packages
 
 versionPattern = re.compile(r"""^__version__ = ['"](.*?)['"]$""", re.M)
-with open("fusion_index/_version.py", "rt") as f:
+with open("src/fusion_index/_version.py", "rt") as f:
     version = versionPattern.search(f.read()).group(1)
 
 
