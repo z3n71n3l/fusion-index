@@ -2,7 +2,7 @@ import re
 from setuptools import setup, find_packages
 
 versionPattern = re.compile(r"""^__version__ = ['"](.*?)['"]$""", re.M)
-with open("fusion_index/_version.py", "rt") as f:
+with open("src/fusion_index/_version.py", "rt") as f:
     version = versionPattern.search(f.read()).group(1)
 
 
@@ -25,5 +25,6 @@ setup(
         'py2casefold',
         ],
     license='MIT',
-    packages=find_packages() + ['axiom.plugins'],
+    packages=find_packages(where='src') + ['axiom.plugins'],
+    package_dir={'': 'src'},
     include_package_data=True)

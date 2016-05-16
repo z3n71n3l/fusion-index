@@ -1,1 +1,2 @@
-graft fusion_index/test/data
+include LICENSE
+graft src
