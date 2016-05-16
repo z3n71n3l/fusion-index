@@ -9,3 +9,4 @@ RUN /appenv/bin/trial --temp-directory=/tmp/_trial_temp --reporter=text fusion_i
 EXPOSE 8443
 WORKDIR "/db"
 ENTRYPOINT ["/appenv/bin/axiomatic", "-d", "/db/fusion-index.axiom"]
+CMD ["start", "--pidfile", "", "--nodaemon"]
