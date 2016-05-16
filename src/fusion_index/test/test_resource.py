@@ -2,7 +2,8 @@ import json
 from StringIO import StringIO
 
 from axiom.store import Store
-from eliot.testing import LoggedAction, assertContainsFields, capture_logging
+from eliot.testing import assertContainsFields, capture_logging, LoggedAction
+from treq.testing import RequestTraversalAgent
 from twisted.trial.unittest import SynchronousTestCase
 from twisted.web import http
 from twisted.web.client import FileBodyProducer, readBody
@@ -12,7 +13,6 @@ from fusion_index.logging import (
     LOG_SEARCH_PUT)
 from fusion_index.resource import IndexRouter
 from fusion_index.search import SearchClasses
-from fusion_index.test.util import ResourceTraversalAgent
 
 
 
@@ -20,7 +20,8 @@ def GET(self, agent, path):
     """
     Simulate a GET request.
     """
-    return self.successResultOf(agent.request(b'GET', path))
+    return self.successResultOf(
+        agent.request(b'GET', b'https://example.com' + path))
 
 
 def PUT(self, agent, path, data):
@@ -29,14 +30,17 @@ def PUT(self, agent, path, data):
     """
     return self.successResultOf(
         agent.request(
-            b'PUT', path, bodyProducer=FileBodyProducer(StringIO(data))))
+            b'PUT',
+            b'https://example.com' + path,
+            bodyProducer=FileBodyProducer(StringIO(data))))
 
 
 def DELETE(self, agent, path):
     """
     Simulate a DELETE request.
     """
-    return self.successResultOf(agent.request(b'DELETE', path))
+    return self.successResultOf(
+        agent.request(b'DELETE', b'https://example.com' + path))
 
 
 def data(self, response):
@@ -84,7 +88,7 @@ class LookupAPITests(SynchronousTestCase):
         Storing a value in the lookup index and then retrieving it results in
         the same value that was originally stored.
         """
-        agent = ResourceTraversalAgent(self._resource())
+        agent = RequestTraversalAgent(self._resource())
         response = PUT(
             self, agent, b'/lookup/someenv/sometype/somekey', b'data')
         self.assertEqual(response.code, http.NO_CONTENT)
@@ -115,7 +119,7 @@ class LookupAPITests(SynchronousTestCase):
         Trying to retrieve an item that is not present in the lookup index
         results in a 404 response.
         """
-        agent = ResourceTraversalAgent(self._resource())
+        agent = RequestTraversalAgent(self._resource())
         response = GET(self, agent, b'/lookup/someenv/sometype/somekey')
         self.assertEqual(response.code, http.NOT_FOUND)
 
@@ -124,7 +128,7 @@ class LookupAPITests(SynchronousTestCase):
         """
         Storing a value in the lookup index is idempotent.
         """
-        agent = ResourceTraversalAgent(self._resource())
+        agent = RequestTraversalAgent(self._resource())
         response = PUT(
             self, agent, b'/lookup/someenv/sometype/somekey', b'data')
         self.assertEqual(response.code, http.NO_CONTENT)
@@ -146,7 +150,7 @@ class LookupAPITests(SynchronousTestCase):
         """
         Storing a value in the lookup index overwrites any existing value.
         """
-        agent = ResourceTraversalAgent(self._resource())
+        agent = RequestTraversalAgent(self._resource())
         response = PUT(
             self, agent, b'/lookup/someenv/sometype/somekey', b'data')
         self.assertEqual(response.code, http.NO_CONTENT)
@@ -168,7 +172,7 @@ class LookupAPITests(SynchronousTestCase):
         """
         Storing values under one key does not affect different keys.
         """
-        agent = ResourceTraversalAgent(self._resource())
+        agent = RequestTraversalAgent(self._resource())
 
         response = PUT(self, agent, b'/lookup/e1/t1/k1', b'data1')
         self.assertEqual(response.code, http.NO_CONTENT)
@@ -262,7 +266,7 @@ class SearchAPITests(SynchronousTestCase):
         the same value that was originally stored. After deleting it, the entry
         is no longer returned by a search.
         """
-        agent = ResourceTraversalAgent(self._resource())
+        agent = RequestTraversalAgent(self._resource())
         response = PUT(
             self,
             agent,
@@ -302,7 +306,7 @@ class SearchAPITests(SynchronousTestCase):
         Deleting a value that does not exist in the search index succeeds
         without doing anything.
         """
-        agent = ResourceTraversalAgent(self._resource())
+        agent = RequestTraversalAgent(self._resource())
         response = DELETE(
             self,
             agent,
@@ -316,7 +320,7 @@ class SearchAPITests(SynchronousTestCase):
         results in both being returned for a search without search type, but
         only the respective entry for a search with search type.
         """
-        agent = ResourceTraversalAgent(self._resource())
+        agent = RequestTraversalAgent(self._resource())
         response = PUT(
             self, agent, b'/search/exact/e/i/entries/result1/type1', b'value')
         self.assertEqual(response.code, http.NO_CONTENT)
@@ -349,7 +353,7 @@ class SearchAPITests(SynchronousTestCase):
         """
         Inserting the same entry twice has no effect on the second insert.
         """
-        agent = ResourceTraversalAgent(self._resource())
+        agent = RequestTraversalAgent(self._resource())
         response = PUT(
             self, agent, b'/search/exact/e/i/entries/result/type', b'value')
         self.assertEqual(response.code, http.NO_CONTENT)
@@ -423,7 +427,7 @@ class SearchAPITests(SynchronousTestCase):
         Searching the exact index only finds entries inserted into the exact
         index, and likewise for the prefix index.
         """
-        agent = ResourceTraversalAgent(self._resource())
+        agent = RequestTraversalAgent(self._resource())
         response = PUT(
             self, agent, b'/search/exact/e/i/entries/result1/type1', b'value')
         self.assertEqual(response.code, http.NO_CONTENT)
@@ -456,7 +460,7 @@ class SearchAPITests(SynchronousTestCase):
         """
         Paths with an invalid search class result in a Not Found response.
         """
-        agent = ResourceTraversalAgent(self._resource())
+        agent = RequestTraversalAgent(self._resource())
         response = GET(
             self, agent, b'/search/invalid/e/i/value/')
         self.assertEqual(response.code, http.NOT_FOUND)

@@ -22,6 +22,7 @@ setup(
         'py2casefold',
         'testtools',
         'toolz',
+        'treq',
         'txspinneret >= 0.1.2',
         ],
     license='MIT',
