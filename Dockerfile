@@ -1,10 +1,9 @@
 FROM fusionapp/base
 
-COPY wheelhouse /wheelhouse
 COPY requirements.txt /application/requirements.txt
-RUN /appenv/bin/pip install --no-cache-dir --no-index -f /wheelhouse -r /application/requirements.txt fusion-index
-RUN /appenv/bin/trial --temp-directory=/tmp/_trial_temp --reporter=text fusion_index \
-  && rm -rf /tmp/_trial_temp
+RUN /appenv/bin/pip install --no-cache-dir --requirement /application/requirements.txt
+COPY . /application
+RUN /appenv/bin/pip install --no-cache-dir /application
 
 EXPOSE 8443
 WORKDIR "/db"
