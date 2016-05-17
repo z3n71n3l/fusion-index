@@ -1,19 +1,22 @@
 cache:
   mount:
-    - wheelhouse
+    - /drone/pip-cache
 build:
   wheels:
     image: fusionapp/base
     pull: true
+    environment:
+      - PIP_DISABLE_PIP_VERSION_CHECK=1
+      - PIP_CACHE_DIR=/drone/pip-cache
     commands:
-      - /appenv/bin/pip wheel --wheel-dir wheelhouse --find-links wheelhouse --no-cache-dir --requirement requirements.txt .
+      - /appenv/bin/pip install --requirement requirements.txt .
+      - /appenv/bin/trial fusion_index
 publish:
   docker:
     registry: scarlet.fusionapp.com:5001
     mirror: https://scarlet.fusionapp.com:5002
     insecure: false
     repo: fusionapp/fusion-index
-    file: docker/fusion-index.docker
     tag: $$BRANCH
     when:
       branch: [master]
