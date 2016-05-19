@@ -29,7 +29,7 @@ pyrsistent==0.11.13       # via eliot, testtools
 python-mimeparse==1.5.2   # via testtools
 service-identity==16.0.0  # via twisted
 six==1.10.0               # via cryptography, eliot, fixtures, pyopenssl, pyrsistent, unittest2
-testtools==2.1.0          # via fixtures, fusion-util
+testtools==2.2.0          # via fixtures, fusion-util
 toolz==0.7.4
 traceback2==1.4.0         # via testtools, unittest2
 Twisted[tls]==16.2.0
