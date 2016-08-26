@@ -2,7 +2,7 @@
 branch = True
 source = fusion_index
 omit =
-    fusion_index/test
+    src/fusion_index/test
 
 [paths]
 source =

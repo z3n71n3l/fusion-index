@@ -1,25 +1,5 @@
 from eliot import ActionType, Field, fields
-from eliot._validation import ValidationError
 
-
-
-def _serviceDescriptionAsField(desc):
-    """
-    Return a dictionary suitable for serialization as an Eliot field.
-
-    @type desc: L{fusion_index.service._ServiceDescription}
-    @param desc: The service description.
-    """
-    from fusion_index.service import _ServiceDescription
-    if not isinstance(desc, _ServiceDescription):
-        raise ValidationError(type(desc))
-    return {
-        'reactor': repr(desc.reactor),
-        'port': desc.port,
-        'interface': desc.interface,
-        'options': repr(desc.options),
-        'router': repr(desc.router),
-        }
 
 
 _SEARCH_CLASS = Field(
