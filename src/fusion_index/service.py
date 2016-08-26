@@ -36,7 +36,7 @@ class FusionIndexServiceMaker(object):
         store.querySQL('PRAGMA synchronous=NORMAL;')
         IService(store).setServiceParent(service)
 
-        site = Site(IndexRouter(store=store).resource())
+        site = Site(IndexRouter(store=store).router.resource())
         webService = strports.service(options['port'], site, reactor=reactor)
         webService.setServiceParent(service)
         return service

@@ -2,7 +2,6 @@
 Tests for L{fusion_index.service}.
 """
 from toolz import count
-from twisted.internet.defer import inlineCallbacks
 from twisted.trial.unittest import TestCase
 
 from fusion_index.service import FusionIndexServiceMaker
@@ -13,7 +12,6 @@ class FusionIndexServiceTests(TestCase):
     """
     Tests for L{FusionIndexService}.
     """
-    @inlineCallbacks
     def test_startService(self):
         """
         L{FusionIndexServiceMaker} creates a multiservice with the store and
