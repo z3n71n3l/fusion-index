@@ -25,6 +25,6 @@ setup(
         'py2casefold',
         ],
     license='MIT',
-    packages=find_packages(where='src') + ['axiom.plugins'],
+    packages=find_packages(where='src') + ['twisted.plugins'],
     package_dir={'': 'src'},
     include_package_data=True)
