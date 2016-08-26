@@ -20,29 +20,29 @@ publish:
     tag: $$BRANCH
     when:
       branch: [master]
-deploy:
-  rancher:
-    url: https://rancher.fusionapp.com
-    access_key: $$RANCHER_PRODUCTION_ACCESS_KEY
-    secret_key: $$RANCHER_PRODUCTION_SECRET_KEY
-    service: fusion-index/fusion-index
-    docker_image: scarlet.fusionapp.com:5000/fusionapp/fusion-index:master
-    start_first: false
-    when:
-      event: push
-      branch: [master]
+# deploy:
+#   rancher:
+#     url: https://rancher.fusionapp.com
+#     access_key: $$RANCHER_PRODUCTION_ACCESS_KEY
+#     secret_key: $$RANCHER_PRODUCTION_SECRET_KEY
+#     service: fusion-index/fusion-index
+#     docker_image: scarlet.fusionapp.com:5000/fusionapp/fusion-index:master
+#     start_first: false
+#     when:
+#       event: push
+#       branch: [master]
 notify:
   slack:
     webhook_url: $$SLACK_URL
     channel: general
     username: drone
-notify:
-  slack:
-    webhook_url: $$SLACK_URL
-    channel: production
-    username: drone
-    when:
-      event: push
-      branch: [master]
+# notify:
+#   slack:
+#     webhook_url: $$SLACK_URL
+#     channel: production
+#     username: drone
+#     when:
+#       event: push
+#       branch: [master]
 branches:
   - master
