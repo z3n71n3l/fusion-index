@@ -1,8 +1,10 @@
 [run]
 branch = True
 source = fusion_index
+omit =
+    */fusion_index/test/*
 
 [paths]
 source =
-  fusion_index
-  .tox/*/lib/python*/site-packages/fusion_index
+    fusion_index
+    .tox/*/lib/python*/site-packages/fusion_index

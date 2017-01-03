@@ -1,48 +1,11 @@
 from eliot import ActionType, Field, fields
-from eliot._validation import ValidationError
 
-
-
-def _serviceDescriptionAsField(desc):
-    """
-    Return a dictionary suitable for serialization as an Eliot field.
-
-    @type desc: L{fusion_index.service._ServiceDescription}
-    @param desc: The service description.
-    """
-    from fusion_index.service import _ServiceDescription
-    if not isinstance(desc, _ServiceDescription):
-        raise ValidationError(type(desc))
-    return {
-        'reactor': repr(desc.reactor),
-        'port': desc.port,
-        'interface': desc.interface,
-        'options': repr(desc.options),
-        'router': repr(desc.router),
-        }
-
-
-_SERVICE_DESCRIPTION = Field(
-    u'description',
-    _serviceDescriptionAsField,
-    u'The service description')
 
 
 _SEARCH_CLASS = Field(
     u'searchClass',
     lambda c: c.value,
     u'The search class')
-
-
-LOG_START_SERVICE = ActionType(
-    u'fusion_index:service:start',
-    [_SERVICE_DESCRIPTION],
-    [],
-    u'Indexing service is starting')
-
-
-LOG_STOP_SERVICE = ActionType(
-    u'fusion_index:service:stop', [], [], u'Indexing service is stopping')
 
 
 LOG_LOOKUP_GET = ActionType(
@@ -89,5 +52,5 @@ LOG_SEARCH_DELETE = ActionType(
 
 
 __all__ = [
-    'LOG_START_SERVICE', 'LOG_STOP_SERVICE', 'LOG_LOOKUP_GET',
-    'LOG_LOOKUP_PUT', 'LOG_SEARCH_GET', 'LOG_SEARCH_PUT', 'LOG_SEARCH_DELETE']
+    'LOG_LOOKUP_GET', 'LOG_LOOKUP_PUT', 'LOG_SEARCH_GET', 'LOG_SEARCH_PUT',
+    'LOG_SEARCH_DELETE']
