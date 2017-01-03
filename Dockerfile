@@ -5,7 +5,6 @@ RUN /appenv/bin/pip install --no-cache-dir --requirement /application/requiremen
 COPY . /application
 RUN /appenv/bin/pip install --no-cache-dir /application
 
-EXPOSE 8443
+EXPOSE 80
 WORKDIR "/db"
-ENTRYPOINT ["/appenv/bin/axiomatic", "-d", "/db/fusion-index.axiom"]
-CMD ["start", "--pidfile", "", "--nodaemon"]
+CMD ["/appenv/bin/twistd", "--nodaemon", "fusion-index", "--db", "/db/fusion-index.axiom"]
