@@ -15,7 +15,7 @@ enum34==1.1.6             # via cryptography, hypothesis
 Epsilon==0.7.1
 extras==1.0.0             # via testtools
 fixtures==3.0.0           # via testtools
-fusion-util==1.1.2
+fusion-util==1.2.0
 hypothesis==3.8.2
 idna==2.5 # via cryptography, twisted
 ipaddress==1.0.18 # via cryptography
