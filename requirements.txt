@@ -12,7 +12,7 @@ axiom==0.7.5
 cffi==1.10.0; platform_python_implementation != 'PyPy'
 characteristic==14.3.0
 constantly==15.1.0
-cryptography==1.8.1
+cryptography==1.8.2
 eliot==1.0.0
 enum34==1.1.6
 epsilon==0.7.1
