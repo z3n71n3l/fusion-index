@@ -27,7 +27,7 @@ linecache2==1.0.0
 packaging==16.8
 pbr==3.0.1
 py2casefold==0.2.1
-pyasn1-modules==0.0.8
+pyasn1-modules==0.0.9
 pyasn1==0.2.3
 pycparser==2.17; platform_python_implementation != 'PyPy'
 pyopenssl==17.0.0
