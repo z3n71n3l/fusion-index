@@ -25,7 +25,7 @@ incremental==17.5.0
 ipaddress==1.0.18
 linecache2==1.0.0
 packaging==16.8
-pbr==3.0.1
+pbr==3.1.1
 py2casefold==0.2.1
 pyasn1-modules==0.0.9
 pyasn1==0.2.3
@@ -42,4 +42,4 @@ traceback2==1.4.0
 twisted[tls]==17.5.0
 txspinneret==0.1.3
 unittest2==1.1.0
-zope.interface==4.4.1
+zope.interface==4.4.2
