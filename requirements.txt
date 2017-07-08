@@ -9,29 +9,26 @@ asn1crypto==0.22.0
 attrs==17.2.0
 automat==0.6.0
 axiom==0.7.5
-cffi==1.10.0; platform_python_implementation != 'PyPy'
 characteristic==14.3.0
 constantly==15.1.0
-cryptography==1.8.2
+cryptography==1.9
 eliot==1.0.0
 enum34==1.1.6
 epsilon==0.7.1
 extras==1.0.0
 fixtures==3.0.0
 fusion-util==1.2.0
-hypothesis==3.11.6
+hyperlink==17.2.1
+hypothesis==3.12.0
 idna==2.5
 incremental==17.5.0
 ipaddress==1.0.18
 linecache2==1.0.0
-packaging==16.8
 pbr==3.1.1
 py2casefold==0.2.1
 pyasn1-modules==0.0.9
 pyasn1==0.2.3
-pycparser==2.18; platform_python_implementation != 'PyPy'
-pyopenssl==17.0.0
-pyparsing==2.2.0
+pyopenssl==17.1.0
 pyrsistent==0.12.3
 python-mimeparse==1.6.0
 service-identity==17.0.0
