@@ -30,6 +30,9 @@ pipeline:
     ignore_branch: true
     mount:
       - /drone/pip-cache
+    when:
+      event: push
+      branch: master
     secrets:
       - sftp_cache_password
   publish:
