@@ -40,9 +40,8 @@ pipeline:
     mirror: https://eu-mirror.gcr.io
     username: _json_key
     when:
-      branch:
-        - master
-        - drone7
+      event: push
+      branch: master
     secrets:
       - docker_password
   deploy:
@@ -55,9 +54,7 @@ pipeline:
     timeout: 120
     when:
       event: push
-      branch:
-        - master
-        - drone7
+      branch: master
     secrets:
       - rancher_access_key
       - rancher_secret_key
@@ -71,4 +68,3 @@ pipeline:
         - failure
 branches:
   - master
-  - drone7
