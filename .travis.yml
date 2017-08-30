@@ -6,6 +6,8 @@ cache:
 branches:
   only:
   - master
+  - staging
+  - trying
 matrix:
   include:
     - env: TOXENV=py27
