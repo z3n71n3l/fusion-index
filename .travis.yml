@@ -18,7 +18,7 @@ install:
 - pip install tox codecov
 - |
   if [ "${TOXENV}" == "pypy" ]; then
-    pyenv upgrade &&
+    pyenv update &&
     pyenv install pypy2.7-5.8.0 &&
     pyenv global pypy2.7-5.8.0
   fi
