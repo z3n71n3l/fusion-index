@@ -7,4 +7,4 @@ RUN /appenv/bin/pip install --no-cache-dir /application
 
 EXPOSE 80
 WORKDIR "/db"
-CMD ["/appenv/bin/twistd", "--nodaemon", "fusion-index", "--db", "/db/fusion-index.axiom"]
+CMD ["/appenv/bin/twistd", "--nodaemon", "--pidfile", "", "fusion-index", "--db", "/db/fusion-index.axiom"]
