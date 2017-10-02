@@ -19,7 +19,7 @@ extras==1.0.0
 fixtures==3.0.0
 fusion-util==1.2.0
 hyperlink==17.3.1
-hypothesis==3.23.2
+hypothesis==3.31.2
 idna==2.6
 incremental==17.5.0
 ipaddress==1.0.18
