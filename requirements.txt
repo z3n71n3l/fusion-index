@@ -27,7 +27,7 @@ linecache2==1.0.0
 pbr==3.1.1
 py2casefold==0.2.1
 pyasn1-modules==0.1.5
-pyasn1==0.3.6
+pyasn1==0.3.7
 pyopenssl==17.3.0
 pyrsistent==0.13.0
 python-mimeparse==1.6.0
