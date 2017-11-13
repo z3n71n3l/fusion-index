@@ -6,7 +6,7 @@
 #
 argparse==1.4.0
 asn1crypto==0.23.0
-attrs==17.2.0
+attrs==17.3.0
 automat==0.6.0
 axiom==0.7.5
 characteristic==14.3.0
