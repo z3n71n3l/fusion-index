@@ -22,7 +22,7 @@ hyperlink==17.3.1
 hypothesis==3.44.4
 idna==2.6
 incremental==17.5.0
-ipaddress==1.0.18
+ipaddress==1.0.19
 linecache2==1.0.0
 pbr==3.1.1
 py2casefold==1.0.1
