@@ -12,9 +12,7 @@ branches:
 matrix:
   include:
     - env: TOXENV=py27
-      python: 2.7.13
-    - env: TOXENV=pypy
-      python: pypy2.7-5.8.0
+      python: 2.7.14
 install:
 - pip install -U pip setuptools wheel
 - pip install tox codecov
