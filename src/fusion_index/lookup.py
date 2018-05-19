@@ -5,7 +5,6 @@ from axiom.attributes import AND, bytes, compoundIndex, text
 from axiom.item import Item
 
 
-
 class LookupEntry(Item):
     """
     An entry in the lookup index.
@@ -13,25 +12,38 @@ class LookupEntry(Item):
     Each combination of C{(environment, indexType, key)} identifies a unique
     item in the index.
     """
-    environment = text(doc="""
+    environment = text(
+        doc="""
     The environment in which this entry exists.
 
     Usually something like C{u'prod'}.
-    """, allowNone=False)
+    """,
+        allowNone=False,
+    )
 
-    indexType = text(doc="""
+    indexType = text(
+        doc="""
     The index type for this index entry.
 
     Usually something like C{u'idNumber'}.
-    """, allowNone=False)
+    """,
+        allowNone=False,
+    )
 
-    key = text(doc="""
+    key = text(
+        doc="""
     The key for this index entry.
-    """, allowNone=False)
+    """,
+        allowNone=False,
+    )
 
-    value = bytes(doc="""
+    value = bytes(
+        doc="""
     The value for this index entry.
-    """, allowNone=False, default=b'')
+    """,
+        allowNone=False,
+        default=b"",
+    )
 
     compoundIndex(environment, indexType, key)
 
@@ -56,10 +68,12 @@ class LookupEntry(Item):
         """
         return store.findUnique(
             cls,
-            AND(cls.environment == environment,
+            AND(
+                cls.environment == environment,
                 cls.indexType == indexType,
-                cls.key == key)).value
-
+                cls.key == key,
+            ),
+        ).value
 
     @classmethod
     def set(cls, store, environment, indexType, key, value):
@@ -85,8 +99,6 @@ class LookupEntry(Item):
         @param value: The value to set.
         """
         item = store.findOrCreate(
-            cls,
-            environment=environment,
-            indexType=indexType,
-            key=key)
+            cls, environment=environment, indexType=indexType, key=key
+        )
         item.value = value

@@ -15,11 +15,9 @@ from axiom.item import Item
 from twisted.python.constants import ValueConstant, Values
 
 
-
 class SearchClasses(Values):
-    EXACT = ValueConstant(u'exact')
-    PREFIX = ValueConstant(u'prefix')
-
+    EXACT = ValueConstant(u"exact")
+    PREFIX = ValueConstant(u"prefix")
 
 
 class SearchEntry(Item):
@@ -38,42 +36,57 @@ class SearchEntry(Item):
     environments at a global configuration level, as well as between different
     indexes within the application.
     """
-    searchClass = text(doc="""
+    searchClass = text(
+        doc="""
     The search "class" that this entry belongs to; must be a value from
     L{SearchClasses}.
-    """, allowNone=False)
+    """,
+        allowNone=False,
+    )
 
-    environment = text(doc="""
+    environment = text(
+        doc="""
     The environment in which this entry exists.
 
     Usually something like C{u'prod'}.
-    """, allowNone=False)
+    """,
+        allowNone=False,
+    )
 
-    indexType = text(doc="""
+    indexType = text(
+        doc="""
     The index type for this index entry.
 
     Usually something like C{u'idNumber'}.
-    """, allowNone=False)
+    """,
+        allowNone=False,
+    )
 
-    searchValue = text(doc="""
+    searchValue = text(
+        doc="""
     The search value that this entry should match.
-    """, allowNone=False)
+    """,
+        allowNone=False,
+    )
 
-    searchType = text(doc="""
+    searchType = text(
+        doc="""
     The search type that this entry should match.
-    """, allowNone=False)
+    """,
+        allowNone=False,
+    )
 
-    result = text(doc="""
+    result = text(
+        doc="""
     The search result that should be returned when this entry matches.
-    """, allowNone=False)
+    """,
+        allowNone=False,
+    )
 
-    compoundIndex(
-        searchClass, environment, indexType, searchValue, searchType, result)
-    compoundIndex(
-        searchClass, environment, indexType, result, searchType)
+    compoundIndex(searchClass, environment, indexType, searchValue, searchType, result)
+    compoundIndex(searchClass, environment, indexType, result, searchType)
 
-
-    _searchNoise = compile(u'[^\w,]', UNICODE)
+    _searchNoise = compile(u"[^\w,]", UNICODE)
 
     @classmethod
     def _normalize(cls, value):
@@ -86,12 +99,12 @@ class SearchEntry(Item):
         @rtype: L{unicode}
         @return: The normalized value.
         """
-        return cls._searchNoise.sub(u'', casefold(normalize('NFC', value)))
-
+        return cls._searchNoise.sub(u"", casefold(normalize("NFC", value)))
 
     @classmethod
-    def search(cls, store, searchClass, environment, indexType, searchValue,
-               searchType=None):
+    def search(
+        cls, store, searchClass, environment, indexType, searchValue, searchType=None
+    ):
         """
         Return entries matching the given search.
 
@@ -104,21 +117,22 @@ class SearchEntry(Item):
         elif searchClass == SearchClasses.PREFIX:
             criteria.append(SearchEntry.searchValue.startswith(searchValue))
         else:
-            raise RuntimeError(
-                'Invalid search class: {!r}'.format(searchClass))
-        criteria.extend([
-            SearchEntry.searchClass == searchClass.value,
-            SearchEntry.environment == environment,
-            SearchEntry.indexType == indexType,
-            ])
+            raise RuntimeError("Invalid search class: {!r}".format(searchClass))
+        criteria.extend(
+            [
+                SearchEntry.searchClass == searchClass.value,
+                SearchEntry.environment == environment,
+                SearchEntry.indexType == indexType,
+            ]
+        )
         if searchType is not None:
             criteria.append(SearchEntry.searchType == searchType)
-        return store.query(SearchEntry, AND(*criteria)).getColumn('result')
-
+        return store.query(SearchEntry, AND(*criteria)).getColumn("result")
 
     @classmethod
-    def insert(cls, store, searchClass, environment, indexType, result,
-               searchType, searchValue):
+    def insert(
+        cls, store, searchClass, environment, indexType, result, searchType, searchValue
+    ):
         """
         Insert an entry into the search index.
 
@@ -127,14 +141,17 @@ class SearchEntry(Item):
         searchValue = cls._normalize(searchValue)
         entry = store.findUnique(
             SearchEntry,
-            AND(SearchEntry.searchClass == searchClass.value,
+            AND(
+                SearchEntry.searchClass == searchClass.value,
                 SearchEntry.environment == environment,
                 SearchEntry.indexType == indexType,
                 SearchEntry.result == result,
-                SearchEntry.searchType == searchType),
-            None)
+                SearchEntry.searchType == searchType,
+            ),
+            None,
+        )
         if entry is None:
-            if searchValue != u'':
+            if searchValue != u"":
                 SearchEntry(
                     store=store,
                     searchClass=searchClass.value,
@@ -142,17 +159,16 @@ class SearchEntry(Item):
                     indexType=indexType,
                     result=result,
                     searchType=searchType,
-                    searchValue=searchValue)
+                    searchValue=searchValue,
+                )
         else:
-            if searchValue == u'':
+            if searchValue == u"":
                 entry.deleteFromStore()
             else:
                 entry.searchValue = searchValue
 
-
     @classmethod
-    def remove(cls, store, searchClass, environment, indexType, result,
-               searchType):
+    def remove(cls, store, searchClass, environment, indexType, result, searchType):
         """
         Remove an entry from the search index.
 
@@ -160,8 +176,11 @@ class SearchEntry(Item):
         """
         store.query(
             SearchEntry,
-            AND(SearchEntry.searchClass == searchClass.value,
+            AND(
+                SearchEntry.searchClass == searchClass.value,
                 SearchEntry.environment == environment,
                 SearchEntry.indexType == indexType,
                 SearchEntry.result == result,
-                SearchEntry.searchType == searchType)).deleteFromStore()
+                SearchEntry.searchType == searchType,
+            ),
+        ).deleteFromStore()
