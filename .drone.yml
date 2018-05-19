@@ -9,6 +9,7 @@ pipeline:
     ignore_branch: true
     mount:
       - /drone/pip-cache
+      - /drone/pex-cache
     secrets:
       - sftp_cache_password
   build:
@@ -17,9 +18,20 @@ pipeline:
     environment:
       - PIP_CACHE_DIR=/drone/pip-cache
     commands:
-      - mkdir -p $PIP_CACHE_DIR
-      - /appenv/bin/pip install --requirement requirements.txt .
-      - /appenv/bin/trial fusion_index
+      # Take this out once pex is in the base image
+      - /appenv/bin/pip install pex==1.4.1 requests==2.18.4
+      - >
+        /appenv/bin/pex
+        --python /appenv/bin/python
+        --no-pypi
+        --index https://pypi.org/
+        --cache-dir /drone/pex-cache
+        --script twistd
+        --output-file fusion-index.pex
+        --always-write-cache
+        --requirement requirements.txt
+        .
+      - env PEX_MODULE=twisted.trial ./fusion-index.pex fusion_index
   rebuild_cache:
     image: appleboy/drone-sftp-cache
     server: sftp-cache.drone7.non-production.fusionapp.com
@@ -30,6 +42,7 @@ pipeline:
     ignore_branch: true
     mount:
       - /drone/pip-cache
+      - /drone/pex-cache
     when:
       event: push
       branch: master

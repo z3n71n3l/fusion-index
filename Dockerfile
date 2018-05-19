@@ -1,10 +1,7 @@
 FROM fusionapp/base
 
-COPY requirements.txt /application/requirements.txt
-RUN /appenv/bin/pip install --no-cache-dir --requirement /application/requirements.txt
-COPY . /application
-RUN /appenv/bin/pip install --no-cache-dir /application
-
+COPY ["fusion-index.pex", "/application/fusion_index.pex"]
+RUN ["/application/fusion_index.pex", "--version"]
 EXPOSE 80
 WORKDIR "/db"
-CMD ["/appenv/bin/twistd", "--nodaemon", "--pidfile", "", "fusion-index", "--db", "/db/fusion-index.axiom"]
+CMD ["/application/fusion_index.pex", "--nodaemon", "--pidfile", "", "fusion-index", "--db", "/db/fusion-index.axiom"]
