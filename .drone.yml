@@ -24,7 +24,7 @@ pipeline:
         /appenv/bin/pex
         --python /appenv/bin/python
         --no-pypi
-        --index https://pypi.org/
+        --index https://pypi.org/simple/
         --cache-dir /drone/pex-cache
         --script twistd
         --output-file fusion-index.pex
