@@ -1,17 +1,21 @@
 pipeline:
   restore_cache:
-    image: appleboy/drone-sftp-cache
-    server: sftp-cache.drone7.non-production.fusionapp.com
-    port: 45945
-    username: drone-cache
-    path: /drone-cache
+    image: plugins/s3-cache
+    pull: true
+    endpoint: https://s3.amazonaws.com
+    root: /drone-cache-fusionapp-useast
     restore: true
-    ignore_branch: true
     mount:
       - /drone/pip-cache
       - /drone/pex-cache
     secrets:
-      - sftp_cache_password
+      - aws_access_key_id
+      - aws_secret_access_key
+    when:
+      event:
+        - push
+        - pull_request
+        - tag
   build:
     image: fusionapp/base
     pull: true
@@ -32,53 +36,102 @@ pipeline:
         --requirement requirements.txt
         .
       - env PEX_MODULE=twisted.trial ./fusion-index.pex fusion_index
+    when:
+      event:
+        - push
+        - pull_request
+        - tag
   rebuild_cache:
-    image: appleboy/drone-sftp-cache
-    server: sftp-cache.drone7.non-production.fusionapp.com
-    port: 45945
-    username: drone-cache
-    path: /drone-cache
+    image: plugins/s3-cache
+    pull: true
+    endpoint: https://s3.amazonaws.com
+    root: /drone-cache-fusionapp-useast
     rebuild: true
-    ignore_branch: true
     mount:
       - /drone/pip-cache
       - /drone/pex-cache
+    secrets:
+      - aws_access_key_id
+      - aws_secret_access_key
     when:
       event: push
-      branch: master
+      branch:
+        - master
+  flush_cache:
+    image: plugins/s3-cache
+    pull: true
+    endpoint: https://s3.amazonaws.com
+    root: /drone-cache-fusionapp-useast
+    flush: true
     secrets:
-      - sftp_cache_password
+      - aws_access_key_id
+      - aws_secret_access_key
+    when:
+      event: push
+      branch:
+        - master
   publish:
-    image: plugins/docker
-    repo: eu.gcr.io/fusion-168903/fusion-index
-    tags: ${DRONE_BRANCH}
-    registry: eu.gcr.io
-    mirror: https://eu-mirror.gcr.io
-    username: _json_key
+    image: plugins/ecr
+    region: eu-west-1
+    registry: 801493518741.dkr.ecr.eu-west-1.amazonaws.com
+    repo: 801493518741.dkr.ecr.eu-west-1.amazonaws.com/fusion-index
+    tags:
+      - ${DRONE_BRANCH}
+      - git-${DRONE_COMMIT_SHA}
     when:
       event: push
       branch: master
     secrets:
-      - docker_password
+      - ecr_access_key
+      - ecr_secret_key
   deploy:
     image: peloton/drone-rancher
     url: https://rancher.fusionapp.com
     service: Fusion/fusion-index
-    docker_image: eu.gcr.io/fusion-168903/fusion-index:${DRONE_BRANCH}
+    docker_image: 801493518741.dkr.ecr.eu-west-1.amazonaws.com/fusion-index:git-${DRONE_COMMIT_SHA}
     start_first: false
     confirm: true
-    timeout: 120
+    timeout: 240
     when:
       event: push
       branch: master
     secrets:
-      - rancher_access_key
-      - rancher_secret_key
+      - source: rancher_nonprod_access_key
+        target: rancher_access_key
+      - source: rancher_nonprod_secret_key
+        target: rancher_secret_key
+  deploy-production:
+    image: peloton/drone-rancher
+    url: https://rancher.fusionapp.com
+    service: fusion/fusion-index
+    docker_image: 801493518741.dkr.ecr.eu-west-1.amazonaws.com/fusion-index:git-${DRONE_COMMIT_SHA}
+    start_first: false
+    confirm: true
+    timeout: 240
+    when:
+      event: deployment
+      environment: production
+    secrets:
+      - source: rancher_prod_access_key
+        target: rancher_access_key
+      - source: rancher_prod_secret_key
+        target: rancher_secret_key
   slack:
     image: plugins/slack
     secrets:
       - slack_webhook
     when:
+      status:
+        - success
+        - failure
+  slack_production:
+    image: plugins/slack
+    secrets:
+      - slack_webhook
+    channel: production
+    when:
+      event: deployment
+      environment: production
       status:
         - success
         - failure
