@@ -1,6 +1,7 @@
 import json
 
 from characteristic import attributes
+from prometheus_client.twisted import MetricsResource
 from toolz.dicttoolz import merge
 from twisted.web import http
 from txspinneret.interfaces import ISpinneretResource
@@ -35,6 +36,11 @@ class IndexRouter(object):
         except ValueError:
             return NotFound()
         return SearchResource(store=self.store, params=params)
+
+
+    @router.route(b'metrics')
+    def metrics(self, request, params):
+        return MetricsResource()
 
 
 

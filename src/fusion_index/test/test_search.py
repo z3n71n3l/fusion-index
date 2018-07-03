@@ -1,8 +1,8 @@
 from axiom.store import Store
-from hypothesis import assume, given
+from hypothesis import HealthCheck, assume, given, settings
 from py2casefold import casefold
 from testtools import TestCase
-from testtools.matchers import Annotate, Equals
+from testtools.matchers import AllMatch, Annotate, Equals, HasLength
 
 from fusion_index.search import SearchClasses, SearchEntry
 from fusion_index.test.test_lookup import axiom_text
@@ -18,6 +18,7 @@ def punctuated(text):
 
 
 class SearchTests(TestCase):
+    @settings(suppress_health_check=[HealthCheck.filter_too_much])
     @given(axiom_text(), axiom_text(), axiom_text(), axiom_text(),
            axiom_text())
     def test_exactSearches(self, environment, indexType, searchValue,
@@ -27,6 +28,7 @@ class SearchTests(TestCase):
         """
         assume(SearchEntry._normalize(searchValue) != u'')
         s = Store()
+
         def _tx():
             SearchEntry.insert(
                 s, SearchClasses.EXACT, environment, indexType, result,
@@ -58,6 +60,7 @@ class SearchTests(TestCase):
         s.transact(_tx)
 
 
+    @settings(suppress_health_check=[HealthCheck.filter_too_much])
     @given(axiom_text(), axiom_text(), axiom_text(), axiom_text(),
            axiom_text())
     def test_prefixSearches(self, environment, indexType, searchValue,
@@ -65,8 +68,9 @@ class SearchTests(TestCase):
         """
         Test inserting, searching, and removing for the prefix search class.
         """
-        assume(SearchEntry._normalize(searchValue) != u'')
+        assume(SearchEntry._normalize(searchValue[:3]) != u'')
         s = Store()
+
         def _tx():
             SearchEntry.insert(
                 s, SearchClasses.PREFIX, environment, indexType, result,
@@ -112,10 +116,13 @@ class SearchTests(TestCase):
         """
         Searching with an invalid search class raises L{RuntimeError}.
         """
+        class junk(object):
+            value = u'foo'
         self.assertRaises(
-            RuntimeError, SearchEntry.search, Store(), 42, u'', u'', u'')
+            RuntimeError, SearchEntry.search, Store(), junk(), u'', u'', u'')
 
 
+    @settings(suppress_health_check=[HealthCheck.filter_too_much])
     @given(axiom_text().map(SearchEntry._normalize))
     def test_normalization(self, value):
         """
@@ -124,6 +131,7 @@ class SearchTests(TestCase):
         """
         assume(value != u'')
         s = Store()
+
         def _tx():
             SearchEntry.insert(
                 s, SearchClasses.EXACT, u'e', u'i', u'RESULT', u'type', value)
@@ -144,6 +152,7 @@ class SearchTests(TestCase):
         the entry.
         """
         s = Store()
+
         def _tx():
             SearchEntry.insert(
                 s, SearchClasses.EXACT, u'e', u'i', u'RESULT', u'type', u'. /')
@@ -154,4 +163,42 @@ class SearchTests(TestCase):
             SearchEntry.insert(
                 s, SearchClasses.EXACT, u'e', u'i', u'RESULT', u'type', u'. /')
             self.assertThat(s.query(SearchEntry).count(), Equals(0))
+        s.transact(_tx)
+
+
+    def test_searchEmpty(self):
+        """
+        Searching for a value that is empty after normalization returns nothing.
+        """
+        s = Store()
+
+        def _tx():
+            SearchEntry.insert(
+                s, SearchClasses.PREFIX, u'e', u'i', u'RESULT', u'type', u'yo')
+            self.assertThat(s.query(SearchEntry).count(), Equals(1))
+            self.assertThat([
+                list(SearchEntry.search(
+                    s, SearchClasses.PREFIX, u'e', u'i', u'')),
+                list(SearchEntry.search(
+                    s, SearchClasses.PREFIX, u'e', u'i', u'. .'))],
+                AllMatch(Equals([])))
+        s.transact(_tx)
+
+
+    def test_searchLimit(self):
+        """
+        Searching does not return more results than the limit.
+        """
+        s = Store()
+
+        def _tx():
+            for x in xrange(50):
+                SearchEntry.insert(
+                    s, SearchClasses.EXACT, u'e', u'i', u'RESULT',
+                    u'type{}'.format(x), u'yo')
+            self.assertThat(s.query(SearchEntry).count(), Equals(50))
+            self.assertThat(
+                list(SearchEntry.search(
+                    s, SearchClasses.EXACT, u'e', u'i', u'yo', limit=20)),
+                HasLength(20))
         s.transact(_tx)

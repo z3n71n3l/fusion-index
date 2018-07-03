@@ -4,6 +4,9 @@ Simple Axiom-based lookup index implementation.
 from axiom.attributes import AND, bytes, compoundIndex, text
 from axiom.item import Item
 
+from fusion_index.metrics import (
+    METRIC_LOOKUP_INSERT_LATENCY, METRIC_LOOKUP_QUERY_LATENCY)
+
 
 
 class LookupEntry(Item):
@@ -54,11 +57,12 @@ class LookupEntry(Item):
 
         @raises KeyError: if the entry does not exist.
         """
-        return store.findUnique(
-            cls,
-            AND(cls.environment == environment,
-                cls.indexType == indexType,
-                cls.key == key)).value
+        with METRIC_LOOKUP_QUERY_LATENCY.labels(environment, indexType).time():
+            return store.findUnique(
+                cls,
+                AND(cls.environment == environment,
+                    cls.indexType == indexType,
+                    cls.key == key)).value
 
 
     @classmethod
@@ -84,9 +88,10 @@ class LookupEntry(Item):
         @type value: L{bytes}
         @param value: The value to set.
         """
-        item = store.findOrCreate(
-            cls,
-            environment=environment,
-            indexType=indexType,
-            key=key)
-        item.value = value
+        with METRIC_LOOKUP_INSERT_LATENCY.labels(environment, indexType).time():
+            item = store.findOrCreate(
+                cls,
+                environment=environment,
+                indexType=indexType,
+                key=key)
+            item.value = value

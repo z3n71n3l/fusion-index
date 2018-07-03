@@ -7,12 +7,16 @@ this implementation has both exact matching and prefix matching (in different
 indexes).
 """
 from re import UNICODE, compile
-from py2casefold import casefold
 from unicodedata import normalize
 
 from axiom.attributes import AND, compoundIndex, text
 from axiom.item import Item
+from py2casefold import casefold
 from twisted.python.constants import ValueConstant, Values
+
+from fusion_index.metrics import (
+    METRIC_SEARCH_DELETE_LATENCY, METRIC_SEARCH_INSERT_LATENCY,
+    METRIC_SEARCH_QUERY_LATENCY, METRIC_SEARCH_REJECTED)
 
 
 
@@ -91,29 +95,36 @@ class SearchEntry(Item):
 
     @classmethod
     def search(cls, store, searchClass, environment, indexType, searchValue,
-               searchType=None):
+               searchType=None, limit=200):
         """
         Return entries matching the given search.
 
         @see: L{SearchEntry}
         """
-        criteria = []
-        searchValue = cls._normalize(searchValue)
-        if searchClass == SearchClasses.EXACT:
-            criteria.append(SearchEntry.searchValue == searchValue)
-        elif searchClass == SearchClasses.PREFIX:
-            criteria.append(SearchEntry.searchValue.startswith(searchValue))
-        else:
-            raise RuntimeError(
-                'Invalid search class: {!r}'.format(searchClass))
-        criteria.extend([
-            SearchEntry.searchClass == searchClass.value,
-            SearchEntry.environment == environment,
-            SearchEntry.indexType == indexType,
-            ])
-        if searchType is not None:
-            criteria.append(SearchEntry.searchType == searchType)
-        return store.query(SearchEntry, AND(*criteria)).getColumn('result')
+        with METRIC_SEARCH_QUERY_LATENCY.labels(
+                searchClass.value, environment, indexType).time():
+            criteria = []
+            searchValue = cls._normalize(searchValue)
+            if searchClass == SearchClasses.EXACT:
+                criteria.append(SearchEntry.searchValue == searchValue)
+            elif searchClass == SearchClasses.PREFIX:
+                criteria.append(SearchEntry.searchValue.startswith(searchValue))
+            else:
+                raise RuntimeError(
+                    'Invalid search class: {!r}'.format(searchClass))
+            if searchValue == u'':
+                METRIC_SEARCH_REJECTED.labels(
+                    searchClass.value, environment, indexType).inc()
+                return []
+            criteria.extend([
+                SearchEntry.searchClass == searchClass.value,
+                SearchEntry.environment == environment,
+                SearchEntry.indexType == indexType,
+                ])
+            if searchType is not None:
+                criteria.append(SearchEntry.searchType == searchType)
+            return store.query(
+                SearchEntry, AND(*criteria), limit=limit).getColumn('result')
 
 
     @classmethod
@@ -124,30 +135,32 @@ class SearchEntry(Item):
 
         @see: L{SearchEntry}
         """
-        searchValue = cls._normalize(searchValue)
-        entry = store.findUnique(
-            SearchEntry,
-            AND(SearchEntry.searchClass == searchClass.value,
-                SearchEntry.environment == environment,
-                SearchEntry.indexType == indexType,
-                SearchEntry.result == result,
-                SearchEntry.searchType == searchType),
-            None)
-        if entry is None:
-            if searchValue != u'':
-                SearchEntry(
-                    store=store,
-                    searchClass=searchClass.value,
-                    environment=environment,
-                    indexType=indexType,
-                    result=result,
-                    searchType=searchType,
-                    searchValue=searchValue)
-        else:
-            if searchValue == u'':
-                entry.deleteFromStore()
+        with METRIC_SEARCH_INSERT_LATENCY.labels(
+                searchClass.value, environment, indexType).time():
+            searchValue = cls._normalize(searchValue)
+            entry = store.findUnique(
+                SearchEntry,
+                AND(SearchEntry.searchClass == searchClass.value,
+                    SearchEntry.environment == environment,
+                    SearchEntry.indexType == indexType,
+                    SearchEntry.result == result,
+                    SearchEntry.searchType == searchType),
+                None)
+            if entry is None:
+                if searchValue != u'':
+                    SearchEntry(
+                        store=store,
+                        searchClass=searchClass.value,
+                        environment=environment,
+                        indexType=indexType,
+                        result=result,
+                        searchType=searchType,
+                        searchValue=searchValue)
             else:
-                entry.searchValue = searchValue
+                if searchValue == u'':
+                    entry.deleteFromStore()
+                else:
+                    entry.searchValue = searchValue
 
 
     @classmethod
@@ -158,10 +171,12 @@ class SearchEntry(Item):
 
         @see: L{SearchEntry}
         """
-        store.query(
-            SearchEntry,
-            AND(SearchEntry.searchClass == searchClass.value,
-                SearchEntry.environment == environment,
-                SearchEntry.indexType == indexType,
-                SearchEntry.result == result,
-                SearchEntry.searchType == searchType)).deleteFromStore()
+        with METRIC_SEARCH_DELETE_LATENCY.labels(
+                searchClass.value, environment, indexType).time():
+            store.query(
+                SearchEntry,
+                AND(SearchEntry.searchClass == searchClass.value,
+                    SearchEntry.environment == environment,
+                    SearchEntry.indexType == indexType,
+                    SearchEntry.result == result,
+                    SearchEntry.searchType == searchType)).deleteFromStore()

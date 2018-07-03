@@ -23,6 +23,7 @@ setup(
         'fusion_util',
         'toolz',
         'py2casefold',
+        'prometheus_client',
         ],
     license='MIT',
     packages=find_packages(where='src') + ['twisted.plugins'],

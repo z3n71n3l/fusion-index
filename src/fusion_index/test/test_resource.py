@@ -460,3 +460,19 @@ class SearchAPITests(SynchronousTestCase):
         response = GET(
             self, agent, b'/search/invalid/e/i/value/')
         self.assertEqual(response.code, http.NOT_FOUND)
+
+
+
+class MetricsTests(SynchronousTestCase):
+    """
+    Test that metrics are published.
+    """
+    def test_metrics(self):
+        """
+        Metrics are published at C{/metrics}.
+        """
+        agent = ResourceTraversalAgent(
+            IndexRouter(store=Store()).router.resource())
+        response = GET(
+            self, agent, b'/metrics')
+        self.assertEqual(response.code, http.OK)
