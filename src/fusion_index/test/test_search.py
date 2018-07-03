@@ -1,5 +1,5 @@
 from axiom.store import Store
-from hypothesis import assume, given
+from hypothesis import assume, given, settings, HealthCheck
 from py2casefold import casefold
 from testtools import TestCase
 from testtools.matchers import Annotate, Equals
@@ -18,6 +18,7 @@ def punctuated(text):
 
 
 class SearchTests(TestCase):
+    @settings(suppress_health_check=[HealthCheck.filter_too_much])
     @given(axiom_text(), axiom_text(), axiom_text(), axiom_text(),
            axiom_text())
     def test_exactSearches(self, environment, indexType, searchValue,
@@ -27,6 +28,7 @@ class SearchTests(TestCase):
         """
         assume(SearchEntry._normalize(searchValue) != u'')
         s = Store()
+
         def _tx():
             SearchEntry.insert(
                 s, SearchClasses.EXACT, environment, indexType, result,
@@ -58,6 +60,7 @@ class SearchTests(TestCase):
         s.transact(_tx)
 
 
+    @settings(suppress_health_check=[HealthCheck.filter_too_much])
     @given(axiom_text(), axiom_text(), axiom_text(), axiom_text(),
            axiom_text())
     def test_prefixSearches(self, environment, indexType, searchValue,
@@ -67,6 +70,7 @@ class SearchTests(TestCase):
         """
         assume(SearchEntry._normalize(searchValue) != u'')
         s = Store()
+
         def _tx():
             SearchEntry.insert(
                 s, SearchClasses.PREFIX, environment, indexType, result,
@@ -113,9 +117,10 @@ class SearchTests(TestCase):
         Searching with an invalid search class raises L{RuntimeError}.
         """
         self.assertRaises(
-            RuntimeError, SearchEntry.search, Store(), 42, u'', u'', u'')
+            Exception, SearchEntry.search, Store(), 42, u'', u'', u'')
 
 
+    @settings(suppress_health_check=[HealthCheck.filter_too_much])
     @given(axiom_text().map(SearchEntry._normalize))
     def test_normalization(self, value):
         """
@@ -124,6 +129,7 @@ class SearchTests(TestCase):
         """
         assume(value != u'')
         s = Store()
+
         def _tx():
             SearchEntry.insert(
                 s, SearchClasses.EXACT, u'e', u'i', u'RESULT', u'type', value)
@@ -144,6 +150,7 @@ class SearchTests(TestCase):
         the entry.
         """
         s = Store()
+
         def _tx():
             SearchEntry.insert(
                 s, SearchClasses.EXACT, u'e', u'i', u'RESULT', u'type', u'. /')

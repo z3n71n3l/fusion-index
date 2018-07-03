@@ -1,7 +1,7 @@
 import string
 
 from axiom.store import Store
-from hypothesis import given
+from hypothesis import given, settings
 from hypothesis.strategies import binary, characters, lists, text, tuples
 from testtools import TestCase
 from testtools.matchers import Equals
@@ -9,12 +9,12 @@ from testtools.matchers import Equals
 from fusion_index.lookup import LookupEntry
 
 
+
 def axiom_text():
     return text(
         alphabet=characters(
             blacklist_categories={'Cs'},
-            blacklist_characters={u'\x00'}),
-        average_size=5)
+            blacklist_characters={u'\x00'}))
 
 
 _lower_table = dict(
@@ -30,12 +30,15 @@ def _lower(s):
 
 
 class LookupTests(TestCase):
-    @given(lists(tuples(axiom_text(), axiom_text(), axiom_text(), binary())))
+    @settings(deadline=500)
+    @given(lists(tuples(axiom_text(), axiom_text(), axiom_text(), binary()),
+                 max_size=10))
     def test_inserts(self, values):
         """
         Test inserting and retrieving arbitrary entries.
         """
         s = Store()
+
         def _tx():
             d = {}
             for e, t, k, v in values:
