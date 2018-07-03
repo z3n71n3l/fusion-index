@@ -105,10 +105,6 @@ class SearchEntry(Item):
                 searchClass.value, environment, indexType).time():
             criteria = []
             searchValue = cls._normalize(searchValue)
-            if searchValue == u'':
-                METRIC_SEARCH_REJECTED.labels(
-                    searchClass.value, environment, indexType).inc()
-                return []
             if searchClass == SearchClasses.EXACT:
                 criteria.append(SearchEntry.searchValue == searchValue)
             elif searchClass == SearchClasses.PREFIX:
@@ -116,6 +112,10 @@ class SearchEntry(Item):
             else:
                 raise RuntimeError(
                     'Invalid search class: {!r}'.format(searchClass))
+            if searchValue == u'':
+                METRIC_SEARCH_REJECTED.labels(
+                    searchClass.value, environment, indexType).inc()
+                return []
             criteria.extend([
                 SearchEntry.searchClass == searchClass.value,
                 SearchEntry.environment == environment,

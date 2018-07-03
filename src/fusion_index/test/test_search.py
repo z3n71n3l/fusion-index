@@ -116,8 +116,10 @@ class SearchTests(TestCase):
         """
         Searching with an invalid search class raises L{RuntimeError}.
         """
+        class junk(object):
+            value = u'foo'
         self.assertRaises(
-            Exception, SearchEntry.search, Store(), 42, u'', u'', u'')
+            RuntimeError, SearchEntry.search, Store(), junk(), u'', u'', u'')
 
 
     @settings(suppress_health_check=[HealthCheck.filter_too_much])
