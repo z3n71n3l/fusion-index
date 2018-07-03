@@ -95,7 +95,7 @@ class SearchEntry(Item):
 
     @classmethod
     def search(cls, store, searchClass, environment, indexType, searchValue,
-               searchType=None):
+               searchType=None, limit=200):
         """
         Return entries matching the given search.
 
@@ -105,7 +105,10 @@ class SearchEntry(Item):
                 searchClass.value, environment, indexType).time():
             criteria = []
             searchValue = cls._normalize(searchValue)
-            # METRIC_SEARCH_REJECTED
+            if searchValue == u'':
+                METRIC_SEARCH_REJECTED.labels(
+                    searchClass.value, environment, indexType).inc()
+                return []
             if searchClass == SearchClasses.EXACT:
                 criteria.append(SearchEntry.searchValue == searchValue)
             elif searchClass == SearchClasses.PREFIX:
@@ -120,7 +123,8 @@ class SearchEntry(Item):
                 ])
             if searchType is not None:
                 criteria.append(SearchEntry.searchType == searchType)
-            return store.query(SearchEntry, AND(*criteria)).getColumn('result')
+            return store.query(
+                SearchEntry, AND(*criteria), limit=limit).getColumn('result')
 
 
     @classmethod
