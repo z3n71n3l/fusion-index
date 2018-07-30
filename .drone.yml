@@ -3,7 +3,8 @@ pipeline:
     image: plugins/s3-cache
     pull: true
     endpoint: https://s3.amazonaws.com
-    root: /drone-cache-fusionapp-useast
+    accelerated_endpoint: s3-accelerate.amazonaws.com
+    root: /drone-cache-fusionapp
     restore: true
     mount:
       - /drone/pip-cache
@@ -45,7 +46,8 @@ pipeline:
     image: plugins/s3-cache
     pull: true
     endpoint: https://s3.amazonaws.com
-    root: /drone-cache-fusionapp-useast
+    accelerated_endpoint: s3-accelerate.amazonaws.com
+    root: /drone-cache-fusionapp
     rebuild: true
     mount:
       - /drone/pip-cache
@@ -61,7 +63,8 @@ pipeline:
     image: plugins/s3-cache
     pull: true
     endpoint: https://s3.amazonaws.com
-    root: /drone-cache-fusionapp-useast
+    accelerated_endpoint: s3-accelerate.amazonaws.com
+    root: /drone-cache-fusionapp
     flush: true
     secrets:
       - aws_access_key_id
