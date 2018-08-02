@@ -242,7 +242,11 @@ class SearchAPITests(SynchronousTestCase):
              'indexType': u'someindex',
              'searchValue': u'somevalue',
              'searchType': None})
-        assertContainsFields(self, get1.end_message, {'results': [u'result']})
+        assertContainsFields(
+            self,
+            get1.end_message,
+            {'results': [{u'result': u'result',
+                          u'type': u'type'}]})
         self.assertTrue(get1.succeeded)
         assertContainsFields(
             self, get2.start_message,
@@ -278,7 +282,8 @@ class SearchAPITests(SynchronousTestCase):
             ['application/json'])
         self.assertEqual(
             json.loads(data(self, response)),
-            [u'result'])
+            [{u'result': u'result',
+              u'type': u'type'}])
 
         response = DELETE(
             self,
@@ -331,7 +336,7 @@ class SearchAPITests(SynchronousTestCase):
             response.headers.getRawHeaders('Content-Type'),
             ['application/json'])
         self.assertEqual(
-            set(json.loads(data(self, response))),
+            {r[u'result'] for r in json.loads(data(self, response))},
             {'result1', 'result2'})
 
         response = GET(
@@ -342,7 +347,8 @@ class SearchAPITests(SynchronousTestCase):
             ['application/json'])
         self.assertEqual(
             json.loads(data(self, response)),
-            ['result2'])
+            [{u'result': 'result2',
+              u'type': u'type2'}])
 
 
     def test_insertTwice(self):
@@ -364,7 +370,7 @@ class SearchAPITests(SynchronousTestCase):
             response.headers.getRawHeaders('Content-Type'),
             ['application/json'])
         self.assertEqual(
-            set(json.loads(data(self, response))),
+            {r[u'result'] for r in json.loads(data(self, response))},
             {'result'})
 
 
@@ -404,7 +410,11 @@ class SearchAPITests(SynchronousTestCase):
              'indexType': u'i',
              'searchValue': u'value',
              'searchType': None})
-        assertContainsFields(self, get1.end_message, {'results': [u'result1']})
+        assertContainsFields(
+            self,
+            get1.end_message,
+            {'results': [{u'result': u'result1',
+                          u'type': u'type1'}]})
         self.assertTrue(get1.succeeded)
         assertContainsFields(
             self, get2.start_message,
@@ -413,7 +423,11 @@ class SearchAPITests(SynchronousTestCase):
              'indexType': u'i',
              'searchValue': u'va',
              'searchType': None})
-        assertContainsFields(self, get2.end_message, {'results': [u'result2']})
+        assertContainsFields(
+            self,
+            get2.end_message,
+            {'results': [{u'result': u'result2',
+                          u'type': u'type2'}]})
         self.assertTrue(get2.succeeded)
 
 
@@ -439,7 +453,8 @@ class SearchAPITests(SynchronousTestCase):
             ['application/json'])
         self.assertEqual(
             json.loads(data(self, response)),
-            ['result1'])
+            [{u'result': 'result1',
+              u'type': u'type1'}])
 
         response = GET(
             self, agent, b'/search/prefix/e/i/results/va')
@@ -449,7 +464,8 @@ class SearchAPITests(SynchronousTestCase):
             ['application/json'])
         self.assertEqual(
             json.loads(data(self, response)),
-            ['result2'])
+            [{u'result': 'result2',
+              u'type': u'type2'}])
 
 
     def test_invalidSearchClass(self):

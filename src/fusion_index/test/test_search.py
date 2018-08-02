@@ -37,12 +37,14 @@ class SearchTests(TestCase):
                 list(SearchEntry.search(
                     s, SearchClasses.EXACT, environment, indexType,
                     searchValue)),
-                Equals([result]))
+                Equals([{u'result': result,
+                         u'type': searchType}]))
             self.assertThat(
                 list(SearchEntry.search(
                     s, SearchClasses.EXACT, environment, indexType,
                     searchValue, searchType)),
-                Equals([result]))
+                Equals([{u'result': result,
+                         u'type': searchType}]))
 
             SearchEntry.remove(
                 s, SearchClasses.EXACT, environment, indexType, result,
@@ -79,7 +81,8 @@ class SearchTests(TestCase):
                 list(SearchEntry.search(
                     s, SearchClasses.PREFIX, environment, indexType,
                     searchValue[:3])),
-                Equals([result]))
+                Equals([{u'result': result,
+                         u'type': searchType}]))
             self.assertThat(
                 list(SearchEntry.search(
                     s, SearchClasses.PREFIX, environment, indexType,
@@ -89,12 +92,14 @@ class SearchTests(TestCase):
                 list(SearchEntry.search(
                     s, SearchClasses.PREFIX, environment, indexType,
                     searchValue)),
-                Equals([result]))
+                Equals([{u'result': result,
+                         u'type': searchType}]))
             self.assertThat(
                 list(SearchEntry.search(
                     s, SearchClasses.PREFIX, environment, indexType,
                     searchValue, searchType)),
-                Equals([result]))
+                Equals([{u'result': result,
+                         u'type': searchType}]))
 
             SearchEntry.remove(
                 s, SearchClasses.PREFIX, environment, indexType, result,
@@ -142,7 +147,8 @@ class SearchTests(TestCase):
                     Annotate(
                         'Not found for {!r}({!r}) == {!r}'.format(
                             mutation, value, mutation(value)),
-                        Equals([u'RESULT'])))
+                        Equals([{u'result': u'RESULT',
+                                 u'type': u'type'}])))
         s.transact(_tx)
 
 

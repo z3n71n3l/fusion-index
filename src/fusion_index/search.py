@@ -123,8 +123,9 @@ class SearchEntry(Item):
                 ])
             if searchType is not None:
                 criteria.append(SearchEntry.searchType == searchType)
-            return store.query(
-                SearchEntry, AND(*criteria), limit=limit).getColumn('result')
+            query = store.query(SearchEntry, AND(*criteria), limit=limit)
+            return [{u'result': item.result,
+                     u'type': item.searchType} for item in query]
 
 
     @classmethod
