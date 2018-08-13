@@ -5,11 +5,15 @@ Indexing service for Fusion
 Quick start
 -----------
 
-Install the software:
+Checkout a clone of the `fusion-index` repository and install it:
 
 .. code-block:: shell
 
-   $ pip install fusion-index
+   $ cd path/to/fusion-index/checkout 
+   $ pip install -r requirements.txt
+   # It's recommended to install with `-e` to avoid having to constantly
+   # reinstall when changing branches or making changes.
+   $ pip install -e .
 
 Run the software:
 
